@@ -75,3 +75,62 @@ print(my_dict)
 print("Remove key-value pair from dictionary")
 del my_dict["age"]
 print(my_dict)
+my_dict["name"]="Srividhya.G"
+print(my_dict)
+
+
+print("---------------------------------------")
+print("\n")
+print("Learn about control flows")
+# if-else statement
+input_number=int(input("Enter a number: "))
+if input_number > 0  :
+    print("The number is positive")
+else :
+    print("The number is negative or zero")
+
+# if-elif-else statement
+if input_number >0 and input_number <= 35:
+    print("Pass")
+elif input_number > 35 and input_number <= 50:
+    print("Second class")
+elif input_number > 50 and input_number <= 60:
+    print("First class")
+elif input_number > 60 and input_number <= 100:
+    print("Distinction")
+else :
+    print("Fail")
+
+# nested if statement
+print("Nested if statement")
+var_1=int(input("Enter Amount: "))
+if var_1 >= 1000:
+    var_2=int(input("Enter Discount Percentage: "))
+    if var_2 >= 5000:
+        print("You get 20% discount")
+    else :
+        print("You get 10% discount")
+
+else :
+    print("5% discount")
+
+print("---------------------------------------")
+print("\n")
+print("Learn about loops")
+# for loop
+print("for loop")
+for i in range(len(fruits)):
+    
+    print(i," ",fruits[i])
+
+print("---------------------------------------")
+print("\n")
+# while loop
+print("while loop")
+
+i=0
+while i < len(fruits):
+    print(i," ",fruits[i])
+    i+=1
+
+
