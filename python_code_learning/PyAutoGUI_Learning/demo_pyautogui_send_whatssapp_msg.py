@@ -6,7 +6,7 @@ from urllib.parse import quote
 pyautogui.FAILSAFE = True  # Move mouse to top-left to stop script
 
 # Contact and message
-CONTACT_NAME = "my family"
+CONTACT_NAME = "9488208064"
 MESSAGE = "Om Sai Ram 🙏 Have a blessed day!"
 
 # Images
