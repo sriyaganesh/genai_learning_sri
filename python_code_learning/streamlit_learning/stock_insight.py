@@ -4,34 +4,31 @@ import requests
 import numpy as np
 import plotly.express as px
 from io import StringIO
+from flask import Flask, jsonify, request
+from threading import Thread
 
-# ---------- LOAD NSE STOCK LIST ----------
-@st.cache_data(ttl=86400)
+# =========================
+# DATA FUNCTIONS
+# =========================
+
 def load_nse_stocks():
     url = "https://archives.nseindia.com/content/equities/EQUITY_L.csv"
     headers = {"User-Agent": "Mozilla/5.0"}
-
     r = requests.get(url, headers=headers, timeout=10)
     df = pd.read_csv(StringIO(r.text))
-
-    mapping = dict(zip(df["NAME OF COMPANY"], df["SYMBOL"]))
-    return mapping
+    return dict(zip(df["NAME OF COMPANY"], df["SYMBOL"]))
 
 
-# ---------- FETCH 10 DAY DATA ----------
-@st.cache_data(ttl=600)
 def get_last_10_days(symbol: str):
     symbol_y = symbol + ".NS"
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol_y}?range=15d&interval=1d"
-
     headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
     r = requests.get(url, headers=headers, timeout=10)
 
     data = r.json()
     result = data.get("chart", {}).get("result")
-
     if not result:
-        raise Exception("Stock data not found")
+        return None
 
     timestamps = result[0]["timestamp"]
     closes = result[0]["indicators"]["quote"][0]["close"]
@@ -39,29 +36,21 @@ def get_last_10_days(symbol: str):
     records = []
     for t, c in zip(timestamps, closes):
         if c is not None:
-            records.append({
-                "Date": pd.to_datetime(t, unit="s"),
-                "Close": c
-            })
+            records.append({"Date": pd.to_datetime(t, unit="s"), "Close": c})
 
-    df = pd.DataFrame(records).tail(10)
-    return df
+    return pd.DataFrame(records).tail(10)
 
 
-# ---------- FETCH 52 WEEK ----------
-@st.cache_data(ttl=3600)
 def get_52_week(symbol: str):
     symbol_y = symbol + ".NS"
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol_y}?range=1y&interval=1d"
-
     headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
     r = requests.get(url, headers=headers, timeout=10)
 
     data = r.json()
     result = data.get("chart", {}).get("result")
-
     if not result:
-        raise Exception("52w data not found")
+        return None, None
 
     closes = result[0]["indicators"]["quote"][0]["close"]
     prices = [p for p in closes if p is not None]
@@ -69,10 +58,8 @@ def get_52_week(symbol: str):
     return round(max(prices), 2), round(min(prices), 2)
 
 
-# ---------- ANALYSIS ----------
 def analyze(prices):
     arr = np.array(prices)
-
     change_pct = (arr[-1] - arr[0]) / arr[0] * 100
     avg_price = arr.mean()
     high = arr.max()
@@ -96,12 +83,56 @@ def analyze(prices):
     }
 
 
-# ---------- UI ----------
+# =========================
+# FLASK API
+# =========================
+app = Flask(__name__)
+
+@app.route("/stock")
+def stock_api():
+    symbol = request.args.get("symbol")
+    if not symbol:
+        return jsonify({"error": "symbol required"}), 400
+
+    df = get_last_10_days(symbol)
+    if df is None or df.empty:
+        return jsonify({"error": "no data"}), 404
+
+    prices = df["Close"].tolist()
+    stats = analyze(prices)
+    high52, low52 = get_52_week(symbol)
+
+    return jsonify({
+        "dates": df["Date"].astype(str).tolist(),
+        "prices": prices,
+        "stats": stats,
+        "high52": high52,
+        "low52": low52
+    })
+
+
+def run_flask():
+    app.run(port=5000)
+
+
+# start flask once
+if "flask_started" not in st.session_state:
+    Thread(target=run_flask, daemon=True).start()
+    st.session_state.flask_started = True
+
+
+# =========================
+# STREAMLIT UI
+# =========================
 st.set_page_config(page_title="Stock Insight", layout="centered")
 st.title("📈 Stock Insight Dashboard")
 
-# Load NSE stock list
-STOCK_OPTIONS = load_nse_stocks()
+# load stock list cached in UI
+@st.cache_data(ttl=86400)
+def cached_stocks():
+    return load_nse_stocks()
+
+STOCK_OPTIONS = cached_stocks()
 
 stock_name = st.selectbox(
     "Search NSE Stock",
@@ -110,25 +141,32 @@ stock_name = st.selectbox(
     placeholder="Type company name..."
 )
 
-fetch = st.button("Get Stock Insight")
-
-if fetch:
+if st.button("Get Stock Insight"):
     if not stock_name:
         st.warning("Please select a stock")
     else:
+        symbol = STOCK_OPTIONS[stock_name]
+
         try:
-            symbol = STOCK_OPTIONS[stock_name]
+            r = requests.get("http://localhost:5000/stock", params={"symbol": symbol}, timeout=10)
+            data = r.json()
 
-            df_prices = get_last_10_days(symbol)
-            prices = df_prices["Close"].tolist()
+            if "error" in data:
+                st.error(data["error"])
+                st.stop()
 
-            stats = analyze(prices)
-            high52, low52 = get_52_week(symbol)
+            dates = pd.to_datetime(data["dates"])
+            prices = data["prices"]
+            stats = data["stats"]
+            high52 = data["high52"]
+            low52 = data["low52"]
             current_price = round(prices[-1], 2)
+
+            df_prices = pd.DataFrame({"Date": dates, "Close": prices})
 
             st.markdown("### 📊 Stock Insights")
 
-            # ===== KPI GRID =====
+            # KPI GRID
             row1 = st.columns(3)
             row1[0].metric("Current Price (₹)", current_price)
             row1[1].metric("10-Day Change (%)", stats["change_pct"])
@@ -146,7 +184,7 @@ if fetch:
 
             st.divider()
 
-            # ===== CHART =====
+            # CHART
             st.subheader("10-Day Closing Price Trend")
 
             fig = px.line(
@@ -158,11 +196,7 @@ if fetch:
                 labels={"Date": "Trading Date", "Close": "Closing Price (₹)"}
             )
 
-            fig.update_layout(
-                height=360,
-                hovermode="x unified"
-            )
-
+            fig.update_layout(height=360, hovermode="x unified")
             fig.update_traces(
                 hovertemplate=(
                     "<b>Stock:</b> " + stock_name +
@@ -173,9 +207,8 @@ if fetch:
 
             st.plotly_chart(fig, width="stretch")
 
-            # ===== INSIGHT TEXT =====
+            # INSIGHT
             st.subheader("Insight")
-
             if stats["signal"] == "BUY":
                 st.success("Price shows upward momentum over last 10 days.")
             elif stats["signal"] == "AVOID":
