@@ -1,0 +1,10 @@
+MY Initial Prompt:
+
+{ "task" : "Generate High Quality Image", "title": "Future Generation", "context": "School Kids working with AI programming on a computer", "tone": "professional", "requirements": { "style" : "high quality illustration", "theme": "School students working on a computer on AI Programming", "color palatte" : "Vibrant but light and soothing colors" } }
+
+
+Reverse Prompting JSON Prompt:
+
+{ "task": "generate_image", "title": "Future Generation", "concept": "Next generation students learning artificial intelligence", "scene": { "location": "advanced smart classroom", "main_activity": "students writing AI code on a computer", "technology_elements": [ "AI neural network diagrams", "robot assistant", "holographic brain visualization", "interactive coding dashboard" ] }, "subjects": { "characters": 3, "type": "diverse school children", "pose": "sitting around a computer desk", "interaction": "collaborating and pointing at AI code" }, "visual_design": { "style": "high quality digital illustration", "theme": "future education and artificial intelligence", "color_palette": "soft pastel colors with vibrant blue and purple tech glow", "lighting": "soft natural classroom lighting combined with digital glow", "mood": "creative, innovative, futuristic" }, "composition": { "camera_view": "centered composition", "depth_of_field": "slight background blur", "focus": "computer screen and student collaboration" }, "quality_settings": { "resolution": "4K", "detail": "ultra detailed", "render_engine": "cinematic illustration", "image_quality": "high clarity" } }
+
+
