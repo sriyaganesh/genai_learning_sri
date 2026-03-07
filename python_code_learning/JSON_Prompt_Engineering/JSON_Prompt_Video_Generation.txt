@@ -1,0 +1,125 @@
+{
+  "task": "generate_video",
+  "title": "AI in Education: Today and the Next 30 Years",
+  "duration": "120 seconds",
+  "aspect_ratio": "16:9",
+  "resolution": "4K",
+
+  "tone": "educational, inspiring, futuristic",
+
+  "style": {
+    "visual_style": "cinematic educational animation",
+    "theme": "AI transforming education",
+    "color_palette": "futuristic blues, purples and vibrant academic colors",
+    "lighting": "modern classroom lighting with holographic technology",
+    "background_music": "inspiring soft cinematic music"
+  },
+
+  "scenes": [
+
+    {
+      "scene_id": 1,
+      "duration": "12 seconds",
+      "visual_description": "Opening cinematic shot of a modern classroom slowly transforming into a futuristic AI-powered classroom with holographic screens and smart devices.",
+      "camera": "slow cinematic zoom",
+      "spoken_text": "Education is changing faster than ever before. Artificial Intelligence is transforming how students learn and how teachers teach."
+    },
+
+    {
+      "scene_id": 2,
+      "duration": "12 seconds",
+      "visual_description": "Students learning on tablets while AI systems analyze their progress.",
+      "camera": "classroom pan showing digital learning",
+      "spoken_text": "Today, AI helps students learn in smarter and more personalized ways."
+    },
+
+    {
+      "scene_id": 3,
+      "duration": "10 seconds",
+      "visual_description": "AI dashboard analyzing student performance and suggesting lessons.",
+      "camera": "zoom into analytics dashboard",
+      "spoken_text": "Advancement one: personalized learning powered by artificial intelligence."
+    },
+
+    {
+      "scene_id": 4,
+      "duration": "10 seconds",
+      "visual_description": "Friendly AI tutor hologram explaining math to a student.",
+      "camera": "focus on AI tutor interaction",
+      "spoken_text": "Advancement two: intelligent AI tutors available anytime for students."
+    },
+
+    {
+      "scene_id": 5,
+      "duration": "10 seconds",
+      "visual_description": "Teacher using AI software automatically grading assignments.",
+      "camera": "close-up of teacher using AI grading system",
+      "spoken_text": "Advancement three: automated grading systems that save teachers valuable time."
+    },
+
+    {
+      "scene_id": 6,
+      "duration": "10 seconds",
+      "visual_description": "Students interacting with AI chatbots to ask questions.",
+      "camera": "screen interaction shot",
+      "spoken_text": "Advancement four: AI learning assistants that answer questions instantly."
+    },
+
+    {
+      "scene_id": 7,
+      "duration": "10 seconds",
+      "visual_description": "Students wearing VR headsets exploring planets and historical places.",
+      "camera": "immersive virtual reality transition",
+      "spoken_text": "Advancement five: immersive learning using virtual reality and AI simulations."
+    },
+
+    {
+      "scene_id": 8,
+      "duration": "12 seconds",
+      "visual_description": "Transition to futuristic classrooms with holographic teachers and AI robots assisting students.",
+      "camera": "wide cinematic futuristic classroom shot",
+      "spoken_text": "But this is only the beginning. The next thirty years will bring even greater changes."
+    },
+
+    {
+      "scene_id": 9,
+      "duration": "12 seconds",
+      "visual_description": "Students learning through holographic simulations of history and science.",
+      "camera": "immersive holographic learning scene",
+      "spoken_text": "Future advancement: students will experience lessons through realistic simulations and virtual worlds."
+    },
+
+    {
+      "scene_id": 10,
+      "duration": "10 seconds",
+      "visual_description": "AI mentors guiding students individually through advanced subjects.",
+      "camera": "focus on student interacting with AI mentor",
+      "spoken_text": "AI mentors will guide every student with personalized learning paths."
+    },
+
+    {
+      "scene_id": 11,
+      "duration": "10 seconds",
+      "visual_description": "Global map connecting schools worldwide through digital AI education platforms.",
+      "camera": "zoom out to global network",
+      "spoken_text": "AI will connect classrooms across the world and provide equal learning opportunities."
+    },
+
+    {
+      "scene_id": 12,
+      "duration": "12 seconds",
+      "visual_description": "Bright inspiring future classroom with students collaborating with AI systems.",
+      "camera": "uplifting final cinematic shot",
+      "spoken_text": "The future of education will be intelligent, personalized, and powered by artificial intelligence."
+    }
+
+  ],
+
+  "audio": {
+    "narration_voice": "clear professional narrator",
+    "speech_style": "educational storytelling",
+    "subtitles": true
+  },
+
+  "transitions": "smooth cinematic transitions with digital holographic effects"
+}
