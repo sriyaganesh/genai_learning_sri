@@ -5,8 +5,9 @@ from datetime import datetime
 
 
 EMAIL = "srividhyaganesan1988@gmail.com"
-APP_PASSWORD = "omkg lrha mfon bbxl"
-TO_EMAIL="vlnarayanan.84@gmail.com"
+APP_PASSWORD = "ivhx fpct dyip bhzz"
+#TO_EMAIL="vlnarayanan.84@gmail.com"
+TO_EMAIL="balavb89@gmail.com"
 
 
 async def scrape_nse():
