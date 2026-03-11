@@ -9,4 +9,14 @@ text=["Python is a high-level programming language.",
 embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 vector_store=FAISS.from_texts(text, embedding_model)
-vector_store.save_local("my_first_vecor_store")
+vector_store.save_local("my_first_vector_store")
+
+retriever=vector_store.as_retriever()
+
+query="What is Python?"
+answer=retriever.invoke(query)
+print("Answer:",answer)
+
+
+for i in answer:
+    print(i.page_content)
