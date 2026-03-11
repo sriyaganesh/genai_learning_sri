@@ -43,3 +43,27 @@ print("\n Wikipedia Load")
 
 wiki=WikipediaLoader(query="Artificial intelligence")
 print(wiki.load())
+
+
+
+import os
+import certifi
+import sys
+import io
+from langchain_community.document_loaders import ArxivLoader
+
+# Configure SSL certificates for Windows
+os.environ['SSL_CERT_FILE'] = certifi.where()
+
+# Set UTF-8 encoding for Windows console
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(
+        sys.stdout.buffer, encoding='utf-8', errors='replace'
+    )
+
+loader = ArxivLoader(query="1706.03762")
+
+documents = loader.load()
+
+print(documents)
+print("arXiv loaded successfully")

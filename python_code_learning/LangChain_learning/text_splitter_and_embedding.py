@@ -24,6 +24,34 @@ rec_texts= rec_text_splitter.split_text(full_text)
 print(texts)
 
 
+######################
+
+
+from langchain_openai  import OpenAIEmbeddings
+import os
+from dotenv import load_dotenv
+load_dotenv()
+openai_embed=OpenAIEmbeddings(api_key=os.getenv("OPENAI_API_KEY"))
+textembed="This is a sample text to be embedded"
+embeded=openai_embed.embed_query(textembed)
+print("Embedding:",embeded)
+print(embeded[:5])
+
+
+
+from langchain_community.embeddings  import HuggingFaceEmbeddings
+import os
+from dotenv import load_dotenv
+load_dotenv()
+huggingface_embed=HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+text_for_embed="This is a sample text to be embedded"
+huggingface_embeded=huggingface_embed.embed_query(text_for_embed)
+#print("Embedding:",huggingface_embeded)
+print(huggingface_embeded[:5])
+
+
+
+
 
 
 
