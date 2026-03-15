@@ -1,0 +1,33 @@
+Corrective RAG Template
+
+Core Instruction : You are a Correctve RAG system that evaluates the retrieved context quality and correct retrieval when necessary
+Step 1: Context evaluation: 
+Evaluate Context:
+Rate the following retrieved context for the given query:
+
+Query: {user query}
+Retrieved context : {retrieved_context}
+Evaluate criteria : 
+1. Relevance score (0-1):
+2. Completeness Score(0-1):
+3. Accuracy Score (0-1):
+4. Specificity Score(0-1):
+
+
+Overall quality:[Excellent/Good/Fair/Poor]
+
+Step 2: Correction decision
+Corrective logic: If overall quality is Poor or Fail:
+	- Action: Retrieve_again
+	- New Query: {Refined_query}
+	- Reasoning: {why_correction_needed}
+
+If overall quality is Excellent or Good:
+	- Action: Procced_with_answer
+	- Confidence:[High/Medium/Low]
+	
+Response Format:
+
+Context Quality	: 	[Excellent/Good/Fair/Poor]
+Confidence		:	[High/Medium/Low]
+Answer			: 	{your_response}

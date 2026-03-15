@@ -5,6 +5,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -47,9 +48,10 @@ rag_explanations = {
 ],
 
 "Corrective RAG":[
-"Step 1: Retrieve documents",
-"Step 2: Generate initial answer",
-"Step 3: Improve answer using context"
+"Step 1: Evaluate retrieved context quality",
+"Step 2: Decide if retrieval correction is required",
+"Step 3: Refine query and retrieve again if needed",
+"Step 4: Generate final answer"
 ],
 
 "Advanced RAG":[
@@ -62,7 +64,7 @@ rag_explanations = {
 "Step 1: Speculative RAG → identify topic",
 "Step 2: Fusion RAG → multi query retrieval",
 "Step 3: Self RAG → generate answer",
-"Step 4: Advanced RAG → structured clinical response"
+"Step 4: Advanced RAG → structured response"
 ]
 
 }
@@ -139,23 +141,29 @@ def create_vector_db(chunks):
 
 
 # -----------------------------
-# RAG METHODS
+# SPECULATIVE RAG
 # -----------------------------
 
 def speculative_rag(question, steps):
 
-    steps["Step 1"] = "Identifying medical topic"
+    steps["Step 1"] = "Identifying topic"
 
-    topic = llm.invoke(f"Identify the medical topic: {question}").content
+    topic = llm.invoke(
+        f"Identify the medical topic for: {question}"
+    ).content
 
-    steps["Topic Identified"] = topic
+    steps["Topic"] = topic
 
     return topic
 
 
+# -----------------------------
+# FUSION RAG
+# -----------------------------
+
 def fusion_rag(question, retriever, steps):
 
-    steps["Step 2"] = "Generating multiple search queries"
+    steps["Step 1"] = "Generating multiple search queries"
 
     queries = llm.invoke(
         f"Generate 3 search queries for: {question}"
@@ -165,7 +173,7 @@ def fusion_rag(question, retriever, steps):
 
     docs = []
 
-    steps["Step 3"] = "Retrieving documents"
+    steps["Step 2"] = "Retrieving documents"
 
     for q in queries:
 
@@ -180,9 +188,13 @@ def fusion_rag(question, retriever, steps):
     return context
 
 
+# -----------------------------
+# SELF RAG
+# -----------------------------
+
 def self_rag(question, context, steps):
 
-    steps["Step 4"] = "Generating grounded answer"
+    steps["Step"] = "Generating grounded answer"
 
     answer = llm.invoke(
         f"""
@@ -201,6 +213,10 @@ Answer:
     return answer
 
 
+# -----------------------------
+# CORRECTIVE RAG (YOUR PROMPT)
+# -----------------------------
+
 def corrective_rag(question, retriever, steps):
 
     steps["Step 1"] = "Retrieving documents"
@@ -209,27 +225,98 @@ def corrective_rag(question, retriever, steps):
 
     context = "\n".join([d.page_content for d in docs])
 
-    steps["Step 2"] = "Improving answer"
+    steps["Retrieved Context"] = context[:500]
 
-    improved = llm.invoke(
-        f"""
-Improve answer using context:
 
+    prompt = f"""
+
+Core Instruction : You are a Corrective RAG system that evaluates the retrieved context quality and correct retrieval when necessary
+
+Step 1: Context evaluation
+
+Evaluate Context:
+
+Query: {question}
+
+Retrieved context :
+{context}
+
+Evaluate criteria :
+
+1. Relevance score (0-1)
+2. Completeness score (0-1)
+3. Accuracy score (0-1)
+4. Specificity score (0-1)
+
+Overall quality:[Excellent/Good/Fair/Poor]
+
+Step 2: Correction decision
+
+Corrective logic:
+
+If overall quality is Poor:
+- Action: Retrieve_again
+- New Query: Refine the query
+- Reasoning: Explain why correction needed
+
+If overall quality is Excellent or Good:
+- Action: Proceed_with_answer
+- Confidence:[High/Medium/Low]
+
+Response Format:
+
+Context Quality: [Excellent/Good/Fair/Poor]
+Confidence: [High/Medium/Low]
+Answer: Provide final answer
+"""
+
+    steps["Step 2"] = "Evaluating context quality"
+
+    evaluation = llm.invoke(prompt).content
+
+    steps["Evaluation Result"] = evaluation
+
+
+    if "Retrieve_again" in evaluation:
+
+        steps["Step 3"] = "Retrieving improved context"
+
+        refined_query = llm.invoke(
+            f"Refine the query for better retrieval: {question}"
+        ).content
+
+        steps["Refined Query"] = refined_query
+
+        docs = retriever.invoke(refined_query)
+
+        context = "\n".join([d.page_content for d in docs])
+
+        final_answer = llm.invoke(
+            f"""
+Context:
 {context}
 
 Question:
 {question}
+
+Provide improved answer
 """
-    ).content
+        ).content
 
-    steps["Improved Answer"] = improved
+        steps["Final Answer"] = final_answer
 
-    return improved
+        return final_answer
 
+    else:
+
+        return evaluation
+
+
+# -----------------------------
+# ADVANCED RAG
+# -----------------------------
 
 def advanced_rag(question, context, steps):
-
-    steps["Step 1"] = "Generating structured clinical response"
 
     final = llm.invoke(
         f"""
@@ -250,7 +337,7 @@ Clinical Notes
 """
     ).content
 
-    steps["Final Structured Answer"] = final
+    steps["Structured Answer"] = final
 
     return final
 
@@ -280,24 +367,18 @@ def multi_rag_pipeline(question, retriever):
 
 st.title("AI Medical Knowledge Assistant")
 
-st.write("Ask questions from clinical medical documents.")
-
-
 question = st.text_input("Enter your medical question")
-
 
 rag_type = st.selectbox(
     "Select RAG Strategy",
     list(rag_explanations.keys())
 )
 
-
 uploaded_files = st.file_uploader(
     "Upload additional PDFs",
     type="pdf",
     accept_multiple_files=True
 )
-
 
 submit = st.button("Submit")
 
@@ -323,25 +404,15 @@ if submit and question:
 
     with st.status("Running RAG Pipeline...", expanded=True):
 
-        st.write("Loading documents")
-
         docs = load_default_documents()
 
         if uploaded_files:
 
-            st.write("Adding uploaded documents")
-
             docs.extend(load_uploaded_documents(uploaded_files))
-
-        st.write("Splitting documents")
 
         chunks = split_documents(docs)
 
-        st.write("Creating vector database")
-
         retriever = create_vector_db(chunks)
-
-        st.write("Executing RAG strategy")
 
         if rag_type == "Speculative RAG":
 
@@ -381,15 +452,10 @@ if submit and question:
     st.write(result)
 
 
-    # -----------------------------
-    # SIDEBAR RUNTIME LOGS
-    # -----------------------------
-
     st.sidebar.markdown("---")
     st.sidebar.subheader("Execution Logs")
 
     for step, value in steps.items():
 
         st.sidebar.markdown(f"**{step}**")
-
         st.sidebar.write(value)
