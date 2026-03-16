@@ -1,461 +1,334 @@
 import os
 import streamlit as st
-
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+import requests
+import faiss
+import numpy as np
+import hashlib
+import docx
 
 from dotenv import load_dotenv
+from openai import OpenAI
+from sentence_transformers import SentenceTransformer
+from pypdf import PdfReader
 
 load_dotenv()
 
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
+
+client = OpenAI()
 
 # -----------------------------
-# LLM + Embeddings
+# EMBEDDING MODEL
 # -----------------------------
 
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+@st.cache_resource
+def load_model():
+    return SentenceTransformer("all-MiniLM-L6-v2")
 
-embedding = OpenAIEmbeddings()
-
-
-# -----------------------------
-# Sidebar - RAG Explanation
-# -----------------------------
-
-st.sidebar.title("RAG Strategy Guide")
-
-rag_explanations = {
-
-"Speculative RAG":[
-"Step 1: Identify topic of the question",
-"Step 2: Predict possible knowledge area",
-"Step 3: Guide retrieval using topic"
-],
-
-"Fusion RAG":[
-"Step 1: Generate multiple search queries",
-"Step 2: Retrieve documents for each query",
-"Step 3: Merge all retrieved results",
-"Step 4: Build enriched context"
-],
-
-"Self RAG":[
-"Step 1: Retrieve relevant documents",
-"Step 2: Provide context to LLM",
-"Step 3: LLM generates grounded answer"
-],
-
-"Corrective RAG":[
-"Step 1: Evaluate retrieved context quality",
-"Step 2: Decide if retrieval correction is required",
-"Step 3: Refine query and retrieve again if needed",
-"Step 4: Generate final answer"
-],
-
-"Advanced RAG":[
-"Step 1: Retrieve documents",
-"Step 2: Provide context to LLM",
-"Step 3: Generate structured medical response"
-],
-
-"Multi RAG Pipeline":[
-"Step 1: Speculative RAG → identify topic",
-"Step 2: Fusion RAG → multi query retrieval",
-"Step 3: Self RAG → generate answer",
-"Step 4: Advanced RAG → structured response"
-]
-
-}
-
+model = load_model()
 
 # -----------------------------
-# Load Default Docs
+# HELPER: FILE HASH
 # -----------------------------
 
-def load_default_documents():
+def get_file_hash(files):
+    m = hashlib.md5()
 
-    docs = []
-    folder = "documents"
+    for f in files:
+        m.update(f.name.encode())
+        m.update(f.getvalue())
 
-    if os.path.exists(folder):
-
-        for file in os.listdir(folder):
-
-            if file.endswith(".pdf"):
-
-                loader = PyPDFLoader(os.path.join(folder, file))
-                docs.extend(loader.load())
-
-    return docs
-
+    return m.hexdigest()
 
 # -----------------------------
-# Load Uploaded Docs
+# TEXT EXTRACTION
 # -----------------------------
 
-def load_uploaded_documents(files):
+def extract_text(files):
 
     docs = []
 
     for file in files:
 
-        os.makedirs("temp", exist_ok=True)
+        if file.type == "application/pdf":
 
-        path = os.path.join("temp", file.name)
+            reader = PdfReader(file)
 
-        with open(path, "wb") as f:
-            f.write(file.getbuffer())
+            text = ""
 
-        loader = PyPDFLoader(path)
+            for i, page in enumerate(reader.pages):
 
-        docs.extend(loader.load())
+                page_text = page.extract_text()
+
+                if page_text:
+                    text += f"[Page {i}] {page_text}\n"
+
+            docs.append(text)
+
+        elif file.type == "text/plain":
+
+            docs.append(file.read().decode("utf-8"))
+
+        elif "word" in file.type:
+
+            doc = docx.Document(file)
+            text = "\n".join([p.text for p in doc.paragraphs])
+            docs.append(text)
 
     return docs
 
+# -----------------------------
+# CHUNKING
+# -----------------------------
+
+def create_chunks(docs):
+
+    chunk_size = 1200
+    overlap = 200
+
+    chunks = []
+
+    for doc in docs:
+
+        for i in range(0, len(doc), chunk_size-overlap):
+
+            chunk = doc[i:i+chunk_size]
+
+            if chunk.strip():
+
+                chunks.append({
+                    "timestamp": f"segment_{i}",
+                    "text": chunk
+                })
+
+    return chunks[:300]
 
 # -----------------------------
-# Split Docs
+# VECTOR STORE
 # -----------------------------
 
-def split_documents(docs):
+def build_index(chunks):
 
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=50
+    texts = [c["text"] for c in chunks]
+
+    embeddings = model.encode(
+        texts,
+        batch_size=32,
+        show_progress_bar=True
     )
 
-    return splitter.split_documents(docs)
+    embeddings = np.array(embeddings)
 
+    index = faiss.IndexFlatL2(embeddings.shape[1])
 
-# -----------------------------
-# Vector DB
-# -----------------------------
+    index.add(embeddings)
 
-def create_vector_db(chunks):
-
-    db = Chroma.from_documents(chunks, embedding)
-
-    return db.as_retriever(search_kwargs={"k":3})
-
+    return index
 
 # -----------------------------
-# SPECULATIVE RAG
+# RETRIEVAL
 # -----------------------------
 
-def speculative_rag(question, steps):
+def retrieve(query):
 
-    steps["Step 1"] = "Identifying topic"
+    query_embedding = model.encode([query])
 
-    topic = llm.invoke(
-        f"Identify the medical topic for: {question}"
-    ).content
+    distances, indices = st.session_state.index.search(query_embedding, 4)
 
-    steps["Topic"] = topic
-
-    return topic
-
+    return [st.session_state.chunks[i] for i in indices[0]]
 
 # -----------------------------
-# FUSION RAG
+# ADAPTIVE ROUTER
 # -----------------------------
 
-def fusion_rag(question, retriever, steps):
-
-    steps["Step 1"] = "Generating multiple search queries"
-
-    queries = llm.invoke(
-        f"Generate 3 search queries for: {question}"
-    ).content.split("\n")
-
-    steps["Generated Queries"] = queries
-
-    docs = []
-
-    steps["Step 2"] = "Retrieving documents"
-
-    for q in queries:
-
-        results = retriever.invoke(q)
-
-        docs.extend(results)
-
-    context = "\n".join([d.page_content for d in docs])
-
-    steps["Context Created"] = context[:500]
-
-    return context
-
-
-# -----------------------------
-# SELF RAG
-# -----------------------------
-
-def self_rag(question, context, steps):
-
-    steps["Step"] = "Generating grounded answer"
-
-    answer = llm.invoke(
-        f"""
-Context:
-{context}
-
-Question:
-{question}
-
-Answer:
-"""
-    ).content
-
-    steps["Generated Answer"] = answer
-
-    return answer
-
-
-# -----------------------------
-# CORRECTIVE RAG (YOUR PROMPT)
-# -----------------------------
-
-def corrective_rag(question, retriever, steps):
-
-    steps["Step 1"] = "Retrieving documents"
-
-    docs = retriever.invoke(question)
-
-    context = "\n".join([d.page_content for d in docs])
-
-    steps["Retrieved Context"] = context[:500]
-
+def adaptive_router(query):
 
     prompt = f"""
+Decide retrieval strategy.
 
-Core Instruction : You are a Corrective RAG system that evaluates the retrieved context quality and correct retrieval when necessary
+Options:
+DOCUMENT
+WEB
+HYBRID
 
-Step 1: Context evaluation
+Question: {query}
 
-Evaluate Context:
-
-Query: {question}
-
-Retrieved context :
-{context}
-
-Evaluate criteria :
-
-1. Relevance score (0-1)
-2. Completeness score (0-1)
-3. Accuracy score (0-1)
-4. Specificity score (0-1)
-
-Overall quality:[Excellent/Good/Fair/Poor]
-
-Step 2: Correction decision
-
-Corrective logic:
-
-If overall quality is Poor:
-- Action: Retrieve_again
-- New Query: Refine the query
-- Reasoning: Explain why correction needed
-
-If overall quality is Excellent or Good:
-- Action: Proceed_with_answer
-- Confidence:[High/Medium/Low]
-
-Response Format:
-
-Context Quality: [Excellent/Good/Fair/Poor]
-Confidence: [High/Medium/Low]
-Answer: Provide final answer
+Return one word.
 """
 
-    steps["Step 2"] = "Evaluating context quality"
+    res = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role":"user","content":prompt}]
+    )
 
-    evaluation = llm.invoke(prompt).content
+    return res.choices[0].message.content.strip()
 
-    steps["Evaluation Result"] = evaluation
+# -----------------------------
+# SERPAPI SEARCH
+# -----------------------------
 
+def serpapi_search(query):
 
-    if "Retrieve_again" in evaluation:
+    url = "https://serpapi.com/search.json"
 
-        steps["Step 3"] = "Retrieving improved context"
+    params = {
+        "q": query,
+        "api_key": SERPAPI_API_KEY
+    }
 
-        refined_query = llm.invoke(
-            f"Refine the query for better retrieval: {question}"
-        ).content
+    response = requests.get(url, params=params)
 
-        steps["Refined Query"] = refined_query
+    results = response.json().get("organic_results", [])
 
-        docs = retriever.invoke(refined_query)
+    snippets = []
 
-        context = "\n".join([d.page_content for d in docs])
+    for r in results:
 
-        final_answer = llm.invoke(
-            f"""
+        snippet = r.get("snippet") or r.get("title")
+
+        if snippet:
+            snippets.append(snippet)
+
+    return "\n".join(snippets[:5])
+
+# -----------------------------
+# ANSWER GENERATION
+# -----------------------------
+
+def generate_answer(query, context):
+
+    prompt = f"""
+Answer the question using context.
+
 Context:
 {context}
 
 Question:
-{question}
-
-Provide improved answer
+{query}
 """
-        ).content
 
-        steps["Final Answer"] = final_answer
+    res = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role":"user","content":prompt}]
+    )
 
-        return final_answer
+    return res.choices[0].message.content
+
+# -----------------------------
+# SELF EVALUATION
+# -----------------------------
+
+def evaluate_answer(query, answer):
+
+    prompt = f"""
+Evaluate answer quality.
+
+Question: {query}
+
+Answer: {answer}
+
+Score groundedness (0-10)
+Score completeness (0-10)
+
+Decision: PASS or RETRY
+"""
+
+    res = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role":"user","content":prompt}]
+    )
+
+    return res.choices[0].message.content
+
+# -----------------------------
+# AGENTIC RAG
+# -----------------------------
+
+def agentic_rag(query):
+
+    route = adaptive_router(query)
+
+    if route == "DOCUMENT":
+
+        retrieved = retrieve(query)
+
+        context = "\n".join([c["text"] for c in retrieved])
+
+    elif route == "WEB":
+
+        context = serpapi_search(query)
 
     else:
 
-        return evaluation
+        retrieved = retrieve(query)
+
+        web = serpapi_search(query)
+
+        context = "\n".join([c["text"] for c in retrieved]) + "\n\n" + web
+
+    answer = generate_answer(query, context)
+
+    evaluation = evaluate_answer(query, answer)
+
+    if "RETRY" in evaluation:
+
+        context += "\n\n" + serpapi_search(query)
+
+        answer = generate_answer(query, context)
+
+    return route, answer, evaluation
 
 
-# -----------------------------
-# ADVANCED RAG
-# -----------------------------
-
-def advanced_rag(question, context, steps):
-
-    final = llm.invoke(
-        f"""
-You are a clinical assistant.
-
-Context:
-{context}
-
-Question:
-{question}
-
-Provide structured response:
-
-Overview
-Symptoms
-Treatment
-Clinical Notes
-"""
-    ).content
-
-    steps["Structured Answer"] = final
-
-    return final
-
-
-# -----------------------------
-# MULTI RAG PIPELINE
-# -----------------------------
-
-def multi_rag_pipeline(question, retriever):
-
-    steps = {}
-
-    topic = speculative_rag(question, steps)
-
-    context = fusion_rag(question, retriever, steps)
-
-    answer = self_rag(question, context, steps)
-
-    final = advanced_rag(question, context, steps)
-
-    return final, steps
-
-
-# -----------------------------
+# =============================
 # STREAMLIT UI
-# -----------------------------
+# =============================
 
-st.title("AI Medical Knowledge Assistant")
-
-question = st.text_input("Enter your medical question")
-
-rag_type = st.selectbox(
-    "Select RAG Strategy",
-    list(rag_explanations.keys())
-)
+st.title("Adaptive Agentic RAG Chatbot")
 
 uploaded_files = st.file_uploader(
-    "Upload additional PDFs",
-    type="pdf",
+    "Upload documents",
+    type=["pdf","txt","docx"],
     accept_multiple_files=True
 )
 
-submit = st.button("Submit")
+if uploaded_files:
 
+    file_hash = get_file_hash(uploaded_files)
 
-# -----------------------------
-# SHOW RAG EXPLANATION
-# -----------------------------
+    # Only process if new files
+    if "file_hash" not in st.session_state or st.session_state.file_hash != file_hash:
 
-st.sidebar.subheader("Pipeline Steps")
+        with st.spinner("Processing documents..."):
 
-for step in rag_explanations[rag_type]:
+            docs = extract_text(uploaded_files)
 
-    st.sidebar.write(step)
+            chunks = create_chunks(docs)
 
+            index = build_index(chunks)
 
-# -----------------------------
-# RUN PIPELINE
-# -----------------------------
+            st.session_state.index = index
+            st.session_state.chunks = chunks
+            st.session_state.file_hash = file_hash
 
-if submit and question:
+        st.success(f"Indexed {len(chunks)} chunks")
 
-    steps = {}
+# Ask questions without reprocessing
+if "index" in st.session_state:
 
-    with st.status("Running RAG Pipeline...", expanded=True):
+    query = st.text_input("Ask your question")
 
-        docs = load_default_documents()
+    if st.button("Submit") and query:
 
-        if uploaded_files:
+        with st.spinner("Generating answer..."):
 
-            docs.extend(load_uploaded_documents(uploaded_files))
+            route, answer, evaluation = agentic_rag(query)
 
-        chunks = split_documents(docs)
+        st.subheader("Router Decision")
+        st.write(route)
 
-        retriever = create_vector_db(chunks)
+        st.subheader("Answer")
+        st.write(answer)
 
-        if rag_type == "Speculative RAG":
-
-            result = speculative_rag(question, steps)
-
-        elif rag_type == "Fusion RAG":
-
-            result = fusion_rag(question, retriever, steps)
-
-        elif rag_type == "Self RAG":
-
-            docs = retriever.invoke(question)
-
-            context = "\n".join([d.page_content for d in docs])
-
-            result = self_rag(question, context, steps)
-
-        elif rag_type == "Corrective RAG":
-
-            result = corrective_rag(question, retriever, steps)
-
-        elif rag_type == "Advanced RAG":
-
-            docs = retriever.invoke(question)
-
-            context = "\n".join([d.page_content for d in docs])
-
-            result = advanced_rag(question, context, steps)
-
-        else:
-
-            result, steps = multi_rag_pipeline(question, retriever)
-
-
-    st.subheader("Final Answer")
-
-    st.write(result)
-
-
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("Execution Logs")
-
-    for step, value in steps.items():
-
-        st.sidebar.markdown(f"**{step}**")
-        st.sidebar.write(value)
+        st.subheader("Self Evaluation")
+        st.write(evaluation)
