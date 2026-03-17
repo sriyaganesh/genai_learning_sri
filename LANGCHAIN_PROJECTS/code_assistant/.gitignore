@@ -1,2 +1,4 @@
+# Environment directories
 .env
-.venv
+.venv/
+#.gitignore
