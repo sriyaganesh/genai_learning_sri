@@ -4,6 +4,7 @@ from utils.loaders import load_document
 from utils.youtube import get_youtube_transcript
 from utils.vectorstore import create_vectorstore_from_docs
 
+
 st.set_page_config(page_title="Multi-Assistant AI Workspace", layout="wide")
 st.title("🤖 Multi-Assistant AI Workspace")
 
@@ -89,16 +90,108 @@ elif module == "Code Assistant":
         st.code(output)
 
 # ------------------ LEARNING ------------------
+
 elif module == "Learning":
     st.header("📚 Learning Assistant")
-    topic = st.text_input("Enter topic or upload document (optional for learning)")
-    mode = st.selectbox("Mode", ["teach", "quiz", "evaluate"])
-    user_answer = st.text_area("Your answer (for evaluate mode)")
 
-    if st.button("Run"):
-        if topic.strip() == "":
-            st.warning("Please enter a topic or upload a document.")
-        else:
-            result = learning.learning_assistant(topic, mode, user_answer)
-            st.subheader("Learning Output")
-            st.write(result)
+    # Optional document upload
+    uploaded_file = st.file_uploader("Upload a document (optional)", type=["pdf", "txt", "docx"])
+    topic = st.text_input("Enter topic or leave blank to use uploaded document")
+    mode = st.selectbox("Select mode", ["teach", "quiz", "evaluate"])
+
+    user_answer = ""
+    if mode == "evaluate":
+        user_answer = st.text_area("Enter your answer for evaluation")
+
+    # Initialize session state for quiz
+    if "quiz_active" not in st.session_state:
+        st.session_state.quiz_active = False
+        st.session_state.mcqs = []
+        st.session_state.current_question = 0
+        st.session_state.user_answers = []
+        st.session_state.feedbacks = []
+
+    # START QUIZ
+    if mode == "quiz":
+        start_quiz_clicked = st.button("Start Quiz")
+        if start_quiz_clicked or st.session_state.quiz_active:
+            if start_quiz_clicked:
+                docs_text = load_document(uploaded_file) if uploaded_file else None
+                quiz_topic = topic if topic.strip() else "N/A"
+                mcqs = learning.generate_mcq_quiz(topic=quiz_topic, docs=docs_text, num_questions=10)
+
+                if not mcqs:
+                    st.warning("No questions generated.")
+                else:
+                    st.session_state.quiz_active = True
+                    st.session_state.mcqs = mcqs
+                    st.session_state.current_question = 0
+                    st.session_state.user_answers = []
+                    st.session_state.feedbacks = []
+
+            # Display current question
+            if st.session_state.quiz_active:
+                q_idx = st.session_state.current_question
+                mcq = st.session_state.mcqs[q_idx]
+
+                st.markdown(f"### Question {q_idx + 1}: {mcq['question']}")
+                selected_option = st.radio("Choose your answer", mcq["options"], key=f"q{q_idx}")
+
+                submit_clicked = st.button("Submit Answer", key=f"submit_{q_idx}")
+                if submit_clicked:
+                    # Validate correct answer
+                    try:
+                        correct_index = ord(mcq["answer"].upper()) - ord("A")
+                        correct_option = mcq["options"][correct_index]
+                    except:
+                        correct_option = "N/A"
+
+                    feedback_text = f"Correct answer: {mcq['answer']} - {correct_option}"
+                    if selected_option == correct_option:
+                        feedback_text += "\n✅ Your answer is correct!"
+                    else:
+                        feedback_text += "\n❌ Your answer is incorrect."
+
+                    st.session_state.user_answers.append(selected_option)
+                    st.session_state.feedbacks.append(feedback_text)
+                    st.markdown("**Feedback:**")
+                    st.write(feedback_text)
+
+                    # Advance to next question
+                    if q_idx + 1 < len(st.session_state.mcqs):
+                        st.session_state.current_question += 1
+                    else:
+                        st.session_state.quiz_active = False
+
+        # QUIZ SUMMARY
+        if not st.session_state.quiz_active and st.session_state.feedbacks:
+            st.header("Quiz Summary & Insights")
+            for i, (mcq, ans, fb) in enumerate(zip(st.session_state.mcqs, st.session_state.user_answers, st.session_state.feedbacks)):
+                st.markdown(f"**Q{i+1}:** {mcq['question']}")
+                st.markdown(f"Your answer: {ans}")
+                st.markdown(f"Feedback: {fb}")
+
+            overall_insights = learning.learning_assistant(
+                topic=topic,
+                mode="evaluate",
+                user_answer="\n".join(st.session_state.user_answers),
+                docs=None
+            )
+            st.subheader("Overall Insights & Areas for Improvement")
+            st.write(overall_insights)
+
+    # RUN OTHER MODES
+    else:
+        if st.button("Run"):
+            if not topic.strip() and not uploaded_file:
+                st.warning("Please enter a topic or upload a document.")
+            else:
+                doc_content = load_document(uploaded_file) if uploaded_file else None
+                result = learning.learning_assistant(
+                    topic=topic,
+                    mode=mode,
+                    user_answer=user_answer,
+                    docs=doc_content
+                )
+                st.subheader("Learning Output")
+                st.write(result)
