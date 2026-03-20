@@ -59,23 +59,23 @@ elif module == "Chatbot":
     uploaded_file = st.file_uploader("Upload document for RAG (optional)", type=["pdf", "txt", "docx"])
     query = st.text_input("Ask a question")
 
-if st.button("Run Chatbot"):
-    if query.strip() == "":
-        st.warning("Please enter a question.")
-    else:
-        vectorstore = None
+    if st.button("Run Chatbot"):
+        if query.strip() == "":
+            st.warning("Please enter a question.")
+        else:
+            vectorstore = None
 
-        # If a document is uploaded, create vectorstore
-        if uploaded_file:
-            docs = load_document(uploaded_file)
-            vectorstore = create_vectorstore_from_docs(docs)
+            # If a document is uploaded, create vectorstore
+            if uploaded_file:
+                docs = load_document(uploaded_file)
+                vectorstore = create_vectorstore_from_docs(docs)
 
-        # Initialize RAG agent (web search allowed by default)
-        agent = chatbot.create_rag_agent(vectorstore=vectorstore, allow_web_search=True)
-        response = agent(query)
+            # Initialize RAG agent (web search allowed by default)
+            agent = chatbot.create_rag_agent(vectorstore=vectorstore, allow_web_search=True)
+            response = agent(query)
 
-        st.subheader("Answer")
-        st.write(response)
+            st.subheader("Answer")
+            st.write(response)
 
 # ------------------ CODE ASSISTANT ------------------
 elif module == "Code Assistant":
