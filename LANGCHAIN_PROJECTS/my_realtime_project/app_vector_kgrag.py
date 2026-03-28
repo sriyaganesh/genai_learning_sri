@@ -311,7 +311,7 @@ if st.button("Submit"):
     st.write(faiss_ans)
 
     st.subheader("🕸️ Graph Answer")
-    st.write(graph_ans)
+    st.write(graph_ans) 
 
     st.subheader("🌐 Fallback Used")
     st.write("Yes" if fallback else "No")
