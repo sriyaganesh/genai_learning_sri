@@ -315,3 +315,5 @@ if st.button("Submit"):
 
     st.subheader("🌐 Fallback Used")
     st.write("Yes" if fallback else "No")
+
+    
