@@ -2,6 +2,12 @@ import streamlit as st
 import os
 import tempfile
 import hashlib
+import sys
+import certifi
+import atexit
+
+from dotenv import load_dotenv
+from neo4j import GraphDatabase
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -9,25 +15,36 @@ from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import FAISS
 
 from duckduckgo_search import DDGS
-from dotenv import load_dotenv
 
-from neo4j import GraphDatabase
-
+# ==============================
+# 🔐 ENV + SSL FIX
+# ==============================
 load_dotenv()
+
+if sys.platform == "win32":
+    os.environ["SSL_CERT_FILE"] = certifi.where()
 
 DOCS_PATH = "docs"
 
-# ==============================
-# 🔗 NEO4J CONFIG
-# ==============================
 NEO4J_URI = os.getenv("NEO4J_URI")
 NEO4J_USER = os.getenv("NEO4J_USERNAME")
 NEO4J_PASS = os.getenv("NEO4J_PASSWORD")
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# ==============================
+# 🔌 NEO4J DRIVER
+# ==============================
+@st.cache_resource
+def get_driver():
+    return GraphDatabase.driver(
+        NEO4J_URI,
+        auth=(NEO4J_USER, NEO4J_PASS)
+    )
 
-driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASS))
+driver = get_driver()
 
+@atexit.register
+def close_driver():
+    driver.close()
 
 # ==============================
 # 📄 LOAD DOCUMENTS
@@ -74,7 +91,7 @@ def generate_cache_key(file_names):
 
 
 # ==============================
-# 🧠 VECTOR DB
+# 🧠 VECTOR STORE (FAISS)
 # ==============================
 @st.cache_resource
 def build_vectorstore(cache_key, documents):
@@ -92,31 +109,33 @@ def build_vectorstore(cache_key, documents):
 # ==============================
 def build_knowledge_graph(docs):
     with driver.session() as session:
-        #session.run("MATCH (n) DETACH DELETE n")
+        data = [{"text": doc.page_content[:1500]} for doc in docs]
 
-        for doc in docs:
-            text = doc.page_content[:500]
-
-            query = """
-            CREATE (d:Document {text: $text})
-            """
-            session.run(query, text=text)
+        session.run("""
+            UNWIND $rows AS row
+            CREATE (d:Document {text: row.text})
+        """, {"rows": data})
 
 
 # ==============================
-# 🔍 GRAPH SEARCH
+# 🔍 GRAPH SEARCH (IMPROVED)
 # ==============================
 def query_neo4j(query):
-    with driver.session() as session:
-        result = session.run(
-            """
-            MATCH (d:Document)
-            WHERE d.text CONTAINS $query
-            RETURN d.text LIMIT 3
-            """,
-            query=query
-        )
+    stopwords = {"what", "is", "are", "the", "of", "in", "on", "a", "an"}
 
+    keywords = [
+        word for word in query.lower().split()
+        if word not in stopwords and len(word) > 2
+    ]
+
+    cypher = """
+    MATCH (d:Document)
+    WHERE ANY(word IN $words WHERE toLower(d.text) CONTAINS word)
+    RETURN d.text LIMIT 8
+    """
+
+    with driver.session() as session:
+        result = session.run(cypher, {"words": keywords})
         return "\n".join([r["d.text"] for r in result])
 
 
@@ -135,15 +154,15 @@ def web_search(query):
 # 🤖 FAISS RAG
 # ==============================
 def faiss_rag(query, db):
-    retriever = db.as_retriever(search_kwargs={"k": 3})
+    retriever = db.as_retriever(search_kwargs={"k": 5})
     docs = retriever.invoke(query)
 
     context = "\n".join([d.page_content for d in docs])
 
     llm = ChatOpenAI(model_name="gpt-4", temperature=0)
 
-    prompt = f"""
-    Answer ONLY from context.
+    return llm.invoke(f"""
+    Answer ONLY using context.
     If not found return NOT_FOUND.
 
     Context:
@@ -151,10 +170,7 @@ def faiss_rag(query, db):
 
     Question:
     {query}
-    """
-
-    response = llm.invoke(prompt)
-    return response.content
+    """).content
 
 
 # ==============================
@@ -165,92 +181,94 @@ def graph_rag(query):
 
     llm = ChatOpenAI(model_name="gpt-4", temperature=0)
 
-    prompt = f"""
-    Answer ONLY from this knowledge graph data.
-    If not found return NOT_FOUND.
+    return llm.invoke(f"""
+    Answer using graph data below.
+
+    Even partial info is fine.
+
+    If nothing relevant return NOT_FOUND.
 
     Data:
     {graph_data}
 
     Question:
     {query}
-    """
-
-    response = llm.invoke(prompt)
-    return response.content
+    """).content
 
 
 # ==============================
-# 🧠 ANSWER EVALUATION
+# 🧠 ANSWER COMPARISON
 # ==============================
-def evaluate_answers(query, ans1, ans2):
+def compare_answers(query, faiss_ans, graph_ans):
     llm = ChatOpenAI(model_name="gpt-4", temperature=0)
 
-    prompt = f"""
-    Question: {query}
+    decision = llm.invoke(f"""
+    Compare two answers and pick the best.
 
-    Answer 1:
-    {ans1}
+    Question:
+    {query}
 
-    Answer 2:
-    {ans2}
+    Answer 1 (FAISS):
+    {faiss_ans}
 
-    Choose best answer.
-    If both bad return NONE.
+    Answer 2 (GRAPH):
+    {graph_ans}
 
-    Return ONLY:
+    Rules:
+    - Choose more accurate & complete
+    - Prefer factual grounding
+    - If both bad return NONE
+
+    Output ONLY:
     ANSWER_1 or ANSWER_2 or NONE
-    """
-
-    decision = llm.invoke(prompt).content.strip()
+    """).content.strip()
 
     if "ANSWER_1" in decision:
-        return ans1
+        return faiss_ans
     elif "ANSWER_2" in decision:
-        return ans2
+        return graph_ans
     else:
         return None
 
 
 # ==============================
-# 🚀 MAIN RAG PIPELINE
+# 🚀 HYBRID RAG (COMPARISON)
 # ==============================
 def hybrid_rag(query, db):
-    faiss_answer = faiss_rag(query, db)
-    graph_answer = graph_rag(query)
+    faiss_ans = faiss_rag(query, db)
+    graph_ans = graph_rag(query)
 
-    final_answer = evaluate_answers(query, faiss_answer, graph_answer)
+    final = compare_answers(query, faiss_ans, graph_ans)
 
     fallback = False
 
-    if final_answer is None or "NOT_FOUND" in str(final_answer):
+    if final is None or "NOT_FOUND" in str(final):
         fallback = True
         web_data = web_search(query)
 
         llm = ChatOpenAI(model_name="gpt-4", temperature=0)
 
-        final_answer = llm.invoke(f"""
-        Data not found in documents.
+        final = llm.invoke(f"""
+        Use web data to answer:
 
-        Use web data:
         {web_data}
 
         Question: {query}
         """).content
 
-    return final_answer, faiss_answer, graph_answer, fallback
+    return final, faiss_ans, graph_ans, fallback
 
 
 # ==============================
 # 🎨 STREAMLIT UI
 # ==============================
-st.set_page_config(page_title="Hybrid RAG + KG Chatbot", layout="wide")
+st.set_page_config(page_title="Hybrid RAG Comparison", layout="wide")
 
-st.title("🚀 Hybrid RAG + Knowledge Graph Chatbot")
+st.title("🚀 Hybrid RAG (FAISS vs Graph Comparison)")
 
 if st.button("🔄 Rebuild Index"):
     st.cache_resource.clear()
-    st.success("Cache Cleared!")
+    st.success("Cache cleared!")
 
 documents, file_names = [], []
 
@@ -265,7 +283,7 @@ if uploaded_file:
     documents.extend(up_docs)
     file_names.append(up_name)
 
-if len(documents) == 0:
+if not documents:
     st.warning("Upload documents!")
     st.stop()
 
@@ -274,18 +292,17 @@ st.write("📂 Files:", file_names)
 cache_key = generate_cache_key(file_names)
 db, split_docs = build_vectorstore(cache_key, documents)
 
-# Build KG once
 if st.button("🧠 Build Knowledge Graph"):
     build_knowledge_graph(split_docs)
-    st.success("Knowledge Graph Built!")
+    st.success("Graph built!")
 
 query = st.text_input("Ask a question")
 
 if st.button("Submit"):
-    with st.spinner("Processing..."):
+    with st.spinner("Thinking..."):
         final, faiss_ans, graph_ans, fallback = hybrid_rag(query, db)
 
-    st.subheader("🤖 Final Answer")
+    st.subheader("✅ Final Answer")
     st.write(final)
 
     st.divider()
