@@ -151,7 +151,7 @@ st.title("📄 RAG Document Chatbot")
 if st.button("🔄 Rebuild Index"):
     st.cache_resource.clear()
     st.success("Cache cleared! Rebuilding on next run...")
-
+ 
 # -------- LOAD DOCUMENTS --------
 documents = []
 file_names = []
