@@ -2,3 +2,8 @@
 .env
 .venv/
 #gitignore
+venv/
+LANGCHAIN_PROJECTS/venv/
+__pycache__/
+*.pyc
+.env
