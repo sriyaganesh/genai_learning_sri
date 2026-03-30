@@ -1,0 +1,349 @@
+{
+  "name": "workflow_file_operations",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -48
+      ],
+      "id": "f8c526c0-c017-4316-8813-42db2e3aaad1",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"customers\": [\n    {\n      \"customer_id\": 401,\n      \"name\": \"Arjun Kumar\",\n      \"email\": \"arjun.kumar@example.com\",\n      \"phone\": \"+91-9876543210\",\n      \"age\": 28,\n      \"city\": \"Chennai\",\n      \"country\": \"India\",\n      \"segment\": \"Premium\",\n      \"lifetime_value\": 4500,\n      \"is_active\": true,\n      \"signup_date\": \"2024-01-10\"\n    },\n    {\n      \"customer_id\": 402,\n      \"name\": \"Priya Sharma\",\n      \"email\": \"priya.sharma@example.com\",\n      \"phone\": \"+91-9123456780\",\n      \"age\": 34,\n      \"city\": \"Bangalore\",\n      \"country\": \"India\",\n      \"segment\": \"Standard\",\n      \"lifetime_value\": 3200,\n      \"is_active\": true,\n      \"signup_date\": \"2023-11-22\"\n    },\n    {\n      \"customer_id\": 403,\n      \"name\": \"Rahul Verma\",\n      \"email\": \"rahul.verma@example.com\",\n      \"phone\": \"+91-9988776655\",\n      \"age\": 41,\n      \"city\": \"Mumbai\",\n      \"country\": \"India\",\n      \"segment\": \"Corporate\",\n      \"lifetime_value\": 9800,\n      \"is_active\": false,\n      \"signup_date\": \"2022-09-10\"\n    },\n    {\n      \"customer_id\": 404,\n      \"name\": \"Sneha Iyer\",\n      \"email\": \"sneha.iyer@example.com\",\n      \"phone\": \"+91-9871234567\",\n      \"age\": 25,\n      \"city\": \"Chennai\",\n      \"country\": \"India\",\n      \"segment\": \"Standard\",\n      \"lifetime_value\": 2100,\n      \"is_active\": true,\n      \"signup_date\": \"2024-06-05\"\n    },\n    {\n      \"customer_id\": 405,\n      \"name\": \"Vikram Singh\",\n      \"email\": \"vikram.singh@example.com\",\n      \"phone\": \"+91-9012345678\",\n      \"age\": 37,\n      \"city\": \"Delhi\",\n      \"country\": \"India\",\n      \"segment\": \"Basic\",\n      \"lifetime_value\": 1500,\n      \"is_active\": false,\n      \"signup_date\": \"2023-03-18\"\n    },\n    {\n      \"customer_id\": 406,\n      \"name\": \"Ananya Reddy\",\n      \"email\": \"ananya.reddy@example.com\",\n      \"phone\": \"+91-9345678901\",\n      \"age\": 30,\n      \"city\": \"Hyderabad\",\n      \"country\": \"India\",\n      \"segment\": \"Premium\",\n      \"lifetime_value\": 6700,\n      \"is_active\": true,\n      \"signup_date\": \"2024-02-11\"\n    },\n    {\n      \"customer_id\": 407,\n      \"name\": \"Karthik Nair\",\n      \"email\": \"karthik.nair@example.com\",\n      \"phone\": \"+91-9456781234\",\n      \"age\": 29,\n      \"city\": \"Kochi\",\n      \"country\": \"India\",\n      \"segment\": \"Standard\",\n      \"lifetime_value\": 2800,\n      \"is_active\": true,\n      \"signup_date\": \"2023-12-01\"\n    },\n    {\n      \"customer_id\": 408,\n      \"name\": \"Meera Joshi\",\n      \"email\": \"meera.joshi@example.com\",\n      \"phone\": \"+91-9765432109\",\n      \"age\": 45,\n      \"city\": \"Pune\",\n      \"country\": \"India\",\n      \"segment\": \"Premium\",\n      \"lifetime_value\": 10200,\n      \"is_active\": false,\n      \"signup_date\": \"2021-07-25\"\n    },\n    {\n      \"customer_id\": 409,\n      \"name\": \"Rohan Das\",\n      \"email\": \"rohan.das@example.com\",\n      \"phone\": \"+91-9234567890\",\n      \"age\": 32,\n      \"city\": \"Kolkata\",\n      \"country\": \"India\",\n      \"segment\": \"Standard\",\n      \"lifetime_value\": 3600,\n      \"is_active\": true,\n      \"signup_date\": \"2024-03-19\"\n    },\n    {\n      \"customer_id\": 410,\n      \"name\": \"Neha Kapoor\",\n      \"email\": \"neha.kapoor@example.com\",\n      \"phone\": \"+91-9567890123\",\n      \"age\": 27,\n      \"city\": \"Chandigarh\",\n      \"country\": \"India\",\n      \"segment\": \"Basic\",\n      \"lifetime_value\": 1900,\n      \"is_active\": true,\n      \"signup_date\": \"2023-08-14\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        -64
+      ],
+      "id": "cb068430-9eaf-4806-bc1f-5e1ec0f0cdc9",
+      "name": "set JSON data"
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "options": {
+          "format": true,
+          "encoding": "utf8",
+          "fileName": "Customers.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "22aed365-f4a6-4be4-8fac-7b36b06a6e41",
+      "name": "Convert to JSON File",
+      "alwaysOutputData": true,
+      "notesInFlow": false,
+      "notes": "This node is for converting Raw JSON Data into a JSON File"
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        656,
+        0
+      ],
+      "id": "33a81ca4-3c75-4e04-85bb-0d0bfcfd63c5",
+      "name": "Extract from JSON File",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {
+          "fileName": "Customers.csv",
+          "headerRow": true
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        496,
+        192
+      ],
+      "id": "6f351218-bf0c-43f7-b12e-4958b05c0004",
+      "name": "Convert to csv File",
+      "alwaysOutputData": true,
+      "notes": "This not is t convert to csv file"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        208
+      ],
+      "id": "e7a7d3d8-ca03-491b-b0f4-da5abbcd93c3",
+      "name": "Extract from File",
+      "alwaysOutputData": true,
+      "notesInFlow": false,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "customers",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        128,
+        -48
+      ],
+      "id": "a88d277b-796c-46d3-a335-b5a8917796f4",
+      "name": "Split Out",
+      "alwaysOutputData": true,
+      "notes": "This node is to split the JSON into single records"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "=data",
+        "options": {
+          "fileName": "Customers.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        432,
+        -272
+      ],
+      "id": "c981b404-a2ac-42c9-a1cc-8d9b0ef11f43",
+      "name": "Convert to text File",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "html",
+        "options": {
+          "fileName": "Customers.html"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        544,
+        384
+      ],
+      "id": "6fd07941-dbae-4a46-bf5d-905939dd00f3",
+      "name": "Convert to HTML File",
+      "alwaysOutputData": true,
+      "notes": "This node is to convert to HTML"
+    },
+    {
+      "parameters": {
+        "operation": "html",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        752,
+        384
+      ],
+      "id": "cbea42d4-a24d-49f8-a8af-c63609af4f45",
+      "name": "Extract from HTML File"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        -192
+      ],
+      "id": "e815abd7-0d7c-49a5-8958-9ec0fc8a59d5",
+      "name": "Extract from text File",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8e62341b-86a4-4830-86d2-6911f051d12e",
+              "name": "data",
+              "value": "={{ \nObject.keys($items()[0].json).join(', ') + '\\n' +\n$items().map(i => Object.values(i.json).join(', ')).join('\\n')\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        -288
+      ],
+      "id": "b43d0cd0-a9e0-4ccd-986c-94171bb7bb94",
+      "name": "set text file data format",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "notes": "This node is to convert the JSON data into text"
+    },
+    {
+      "parameters": {
+        "content": "##  This workflow converst JSON data into CSV< HTML, text and JSON File and then extract data from the file to download",
+        "width": 768
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        -256
+      ],
+      "id": "8ca73f2f-abfd-420c-9b56-c8f603366123",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "set JSON data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set JSON data": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to JSON File": {
+      "main": [
+        [
+          {
+            "node": "Extract from JSON File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to csv File": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        []
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Convert to JSON File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to csv File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to HTML File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "set text file data format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to text File": {
+      "main": [
+        [
+          {
+            "node": "Extract from text File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to HTML File": {
+      "main": [
+        [
+          {
+            "node": "Extract from HTML File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from HTML File": {
+      "main": [
+        []
+      ]
+    },
+    "set text file data format": {
+      "main": [
+        [
+          {
+            "node": "Convert to text File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6468bd04-aaa0-47c5-a72a-9007fcfe3a4e",
+  "meta": {
+    "instanceId": "04e96627bb756684b55c0bae404e72f75490c3b7016d8b1689c3e34644a486f2"
+  },
+  "id": "M6lgPjB2beCODJMl",
+  "tags": []
+}
