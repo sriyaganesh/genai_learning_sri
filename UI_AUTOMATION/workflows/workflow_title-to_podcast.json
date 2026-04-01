@@ -1,0 +1,251 @@
+{
+  "name": "workflow_title-to_podcast",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -448,
+        -48
+      ],
+      "id": "ffe97be6-d766-4bce-8a9f-b7542112b154",
+      "name": "Telegram Trigger",
+      "webhookId": "7b0e679f-4e11-4f59-8026-cbf8a8a004e0",
+      "credentials": {
+        "telegramApi": {
+          "id": "mDrTMaOh58svFFGd",
+          "name": "socialeagle_sri_ai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a 120 seconds Story telling for the title below\n {{ $json.message.text }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a skilled Script writer and a content writer to generate a script for 120 seconds!\n\nWrite a thrilling and exciting script for the title given by the user with twist and turns\nI am planning to post this in my profile in social media . It will boost my profile existence in social media . Add the authority statement in the scripts\n\nTone- Bold and story telling"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -240,
+        -48
+      ],
+      "id": "654b47b0-7cf9-4e5c-9dc7-7c595bed511d",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -320,
+        160
+      ],
+      "id": "f36c3a2d-f3e3-4df1-828c-8b630e2c8759",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "b8g7HNJoNo2rUNan",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "input": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        112,
+        -48
+      ],
+      "id": "09da0bf8-bad9-412f-876a-0a2c55b090a3",
+      "name": "Generate audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "b8g7HNJoNo2rUNan",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAudio",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        320,
+        -48
+      ],
+      "id": "e964ea9f-d5d6-4c70-99dc-aa34a75769b5",
+      "name": "Send an audio file",
+      "webhookId": "1453b753-68b6-47ae-b1e5-69ce6d4ee6b8",
+      "credentials": {
+        "telegramApi": {
+          "id": "mDrTMaOh58svFFGd",
+          "name": "socialeagle_sri_ai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "folderId": "1onWbQ6HMP-L-qPWOR42N2q1hdDWQtge4",
+        "title": "={{ $json.output[0].content[0].text }}"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        80,
+        -224
+      ],
+      "id": "b69c1706-7dc6-4eb6-8236-014adcc64db8",
+      "name": "Create a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "78Ze7wr172amPMhH",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Provide one page summary for the below title {{ $json.message.text }}"
+            },
+            {
+              "role": "system",
+              "content": "You are an expert in Script writing and Content writing. Write one page content summary with bullet points and highlights for the given title or topic\n\nIt has to be informative and provide knowledge about the whole concept in short\n\nUse the bullet point format"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -272,
+        -224
+      ],
+      "id": "29107743-3cdd-4df7-9384-1074d5e05f89",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "b8g7HNJoNo2rUNan",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Generate audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate audio": {
+      "main": [
+        [
+          {
+            "node": "Send an audio file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Create a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a29876df-2e29-4926-8db4-a03a809840ed",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "04e96627bb756684b55c0bae404e72f75490c3b7016d8b1689c3e34644a486f2"
+  },
+  "id": "zKCMQ7EnMMmXmH85",
+  "tags": []
+}
