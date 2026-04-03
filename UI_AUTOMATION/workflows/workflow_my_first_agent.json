@@ -1,0 +1,153 @@
+{
+  "name": "workflow_my_first_agent",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6fe1810a-518d-4353-a5c7-2b78d1a9b3b9",
+      "name": "When chat message received",
+      "webhookId": "baaad324-4fc5-4db8-a3d7-c3a5cd25f9f6"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are an intelligent AI agent inside an n8n workflow. Your goal is to send a personalized birthday email using the Gmail tool.\n\nFollow the Tree-of-Thought approach internally (do NOT expose reasoning):\n\n----------------------------------------\n\n1. THINK:\n- Identify recipient details (name, email,  tone)\n- Decide appropriate tone (formal, semi-formal, friendly)\n\n2. PLAN:\n- Craft a short, warm birthday message (80–120 words)\n- Personalize using role or notes if available\n- Add emojis only if tone is friendly\n- Create a clear subject line\n\n3. ACT:\n- If all required details are available → CALL Gmail tool\n- If details are missing → ask user for the missing details conversationally\n\n----------------------------------------\n\nGMAIL TOOL FORMAT (MANDATORY when data is complete):\n\n{\n  \"to\": \"<email>\",\n  \"subject\": \"Happy Birthday <name>\",\n  \"message\": \"Dear <name>,\\n\\nWishing you a very happy birthday! Your contributions are truly appreciated.\\n\\nMay this year bring you success, happiness, and great opportunities ahead.\\n\\nWarm wishes,\\nSri\"\n}\n\n----------------------------------------\n\nCONVERSATIONAL RULES:\n\n- If name is missing → ask: \"Could you please share the recipient's name?\"\n- If email is missing → ask: \"May I have the recipient's email address?\"\n- If multiple fields missing → ask in a single message\n- Keep responses short and natural\n\n----------------------------------------\n\nSTRICT RULES:\n\n- DO NOT call Gmail tool unless all required fields are present\n- DO NOT return JSON unless calling the tool\n- When all details are available → MUST call Gmail tool\n- Keep email content professional and well formatted"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        336,
+        -128
+      ],
+      "id": "285b0968-33dd-4d0b-b715-a884086b5826",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        208
+      ],
+      "id": "927b21cf-ee55-44a5-8990-dba941858343",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "b8g7HNJoNo2rUNan",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        208
+      ],
+      "id": "9f106a00-f118-41de-a800-94bd26f9a198",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        736,
+        32
+      ],
+      "id": "be7b15b1-9486-4e70-b60f-f5667dc6de47",
+      "name": "Send a message in Gmail",
+      "webhookId": "f254bcef-6874-49fa-aafe-173c5fa7ec22",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "w63Xu7fn9rXZXnUi",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2fd72f75-7903-476c-ac47-f78545260fc8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "04e96627bb756684b55c0bae404e72f75490c3b7016d8b1689c3e34644a486f2"
+  },
+  "id": "0kg2mN7Oy9Vr8F4A",
+  "tags": []
+}
