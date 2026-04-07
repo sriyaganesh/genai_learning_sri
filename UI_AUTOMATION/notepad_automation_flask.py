@@ -64,7 +64,8 @@ def write_to_notepad():
         return jsonify({"error": "Missing 'text' in request body"}), 400
 
     user_text = data["text"]
-
+f"{n}th"
+    return f"{n}{['th','st','nd','r']}"
     log("API request received")
     log(f"Input: {user_text}")
 
