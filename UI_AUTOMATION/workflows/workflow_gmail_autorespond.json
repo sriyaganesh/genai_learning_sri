@@ -1,0 +1,130 @@
+{
+  "name": "workflow_gmail_autorespond",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3954d98a-658d-4734-a4bb-a510272a7be3",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "w63Xu7fn9rXZXnUi",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an AI assistant that generates professional Gmail replies.\n\nIMPORTANT FORMATTING RULE:\n- Each section MUST be on a new line.\n- Insert a blank line between greeting, body, and closing.\n- NEVER generate the entire email in a single line.\n\nFollow this exact structure:\n\nGreeting line\n(blank line) \\n\\n\nBody paragraph(s)\n(blank line)\\n\\n\nClosing line\nName line\n\nRules:\n1. Greeting must be on its own line (e.g., \"Hi John,\")\n2. Add a blank line after greeting\n3. Body should be in 1–3 short paragraphs or bullet points\n4. Add a blank line before closing\n5. Closing must be on a separate line (e.g., \"Best regards,\")\n6. Name must be on the next line after closing\n7. Do NOT compress text into a single line\n8. Output plain text only (no JSON, no markdown)\n\nExample output format:\n\nHi John,\n\nThank you for your email.\n\nHere are the details you requested:\n- Item 1\n- Item 2\n\nThanks & Regards,\nSrividhya.G"
+            },
+            {
+              "content": "=Write a reply mail for the below\n\nSubject:  {{ $json.Subject }}\nFrom: {{ $json.To }}\nTo: {{ $json.From }}\nContent:\n{{ $json.snippet }}\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "905b5b48-c9b0-4df8-b253-33a2ca90310b",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "b8g7HNJoNo2rUNan",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "message": "={{ $json.output[0].content[0].text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "e58deccd-48e0-46ee-a8b6-315be2c38d6c",
+      "name": "Reply to a message",
+      "webhookId": "fe2e931d-1eb6-4843-99d5-3e9554296926",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "w63Xu7fn9rXZXnUi",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "688f9060-2fd0-44d5-bdb5-52fd524223e4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "04e96627bb756684b55c0bae404e72f75490c3b7016d8b1689c3e34644a486f2"
+  },
+  "id": "ucJ6NvOi5cn1ScSX",
+  "tags": []
+}

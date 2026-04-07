@@ -1,0 +1,472 @@
+{
+  "name": "workflow_Newsletter",
+  "nodes": [
+    {
+      "parameters": {
+        "trigger": [
+          "message"
+        ],
+        "channelId": {
+          "__rl": true,
+          "value": "C0AQCJKCC1Y",
+          "mode": "list",
+          "cachedResultName": "all-slackaisri"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slackTrigger",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -288
+      ],
+      "id": "5976fd60-2c7d-4ea6-9ae0-9586bdc10067",
+      "name": "Slack Trigger",
+      "webhookId": "5843a12b-c7a5-41c8-9858-0e23e6aaa2f8",
+      "credentials": {
+        "slackApi": {
+          "id": "uey5Ur6VajUyUQ7N",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "srividhyaganesan1988@gmail.com",
+        "subject": "=Newsletter: {{ $('Validate Input Message').item.json.topic }}",
+        "message": "={{ $('Open AI to generate NewsLetter').item.json.output[0].content[0].text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1312,
+        -416
+      ],
+      "id": "6f2a6a6c-ac76-45c5-adbe-2e652a4d6830",
+      "name": "Send a message",
+      "webhookId": "ef85619a-1261-4e34-a03a-b126363c7cf0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "w63Xu7fn9rXZXnUi",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "topic",
+              "stringValue": "={{ $json.message.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f60f8545-8c5a-4003-acd1-18395cc46c91",
+      "name": "Extract Topic",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        128,
+        -288
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AQCJKCC1Y",
+          "mode": "list",
+          "cachedResultName": "all-slackaisri"
+        },
+        "text": "Please request newsletter in a valid format\n\nSample Format:\n \"Topic | Response Method\"",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        752,
+        -144
+      ],
+      "id": "879b24d6-97e7-4571-b820-0bd90e8e4149",
+      "name": "Send Error Message",
+      "webhookId": "c361af72-b68a-4bf9-950a-76a697cc870d",
+      "credentials": {
+        "slackApi": {
+          "id": "uey5Ur6VajUyUQ7N",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AQCJKCC1Y",
+          "mode": "list",
+          "cachedResultName": "all-slackaisri"
+        },
+        "text": "={{ $json.newsletter_output }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1280,
+        -96
+      ],
+      "id": "250714bc-7c20-42fe-ba2d-761d29d4738f",
+      "name": "Send a message1",
+      "webhookId": "bafc7411-34d0-4a57-a9dc-acc799e1be4d",
+      "credentials": {
+        "slackApi": {
+          "id": "uey5Ur6VajUyUQ7N",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f75582f5-71dd-4fe0-b447-c2fef6cdcd68",
+              "name": "newsletter_output",
+              "value": "={{ (() => {\n  let html = $json.output[0].content[0].text;\n\n  // Convert headings\n  html = html.replace(/<h1>(.*?)<\\/h1>/gi, '*$1*\\n');\n  html = html.replace(/<h2>(.*?)<\\/h2>/gi, '*$1*\\n');\n\n  // Convert paragraphs\n  html = html.replace(/<p>(.*?)<\\/p>/gi, '$1\\n');\n\n  // Convert list items\n  html = html.replace(/<li>(.*?)<\\/li>/gi, '• $1\\n');\n\n  // Remove remaining tags\n  html = html.replace(/<[^>]+>/g, '');\n\n  // Clean extra spaces/newlines\n  html = html.replace(/\\n\\s*\\n/g, '\\n\\n').trim();\n\n  return html;\n})() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1072,
+        -112
+      ],
+      "id": "223db333-0c91-4c53-b93d-7e5c85e9b1ab",
+      "name": "convert html to normal text"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.is_valid }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "b7ce44bd-46e4-45b0-a05a-cda55a2bd756"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "valid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c444c9ee-61ac-409c-b3d9-9b4789c0c0c3",
+                    "leftValue": "={{ $json.is_valid }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        528,
+        -272
+      ],
+      "id": "6af584eb-10cd-470e-907c-425cf04f254a",
+      "name": "valid/invalid request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3b7681ab-fb4d-4d1f-ab22-27886d188677",
+              "name": "is_valid",
+              "value": "={{ (() => {\n  const text = ($json.text || \"\").trim();\n  const parts = text.split('|');\n\n  if (parts.length !== 2) return false;\n\n  const topic = parts[0].trim().toLowerCase();\n  const method = parts[1].trim().toLowerCase();\n\n  // Basic format checks\n  if (!topic || topic.length < 5) return false;\n  if (!['slack','email'].includes(method)) return false;\n\n  // ❌ Reject weak / generic topics\n  const invalidTopics = [\n    \"hi\",\"hello\",\"hey\",\"test\",\"ok\",\"yes\",\"no\",\"abc\",\"random\"\n  ];\n\n  if (invalidTopics.includes(topic)) return false;\n\n  // ❌ Reject single-word topics\n  if (topic.split(\" \").length < 2) return false;\n\n  return true;\n})() }}",
+              "type": "string"
+            },
+            {
+              "id": "c0a76e0d-3182-4480-8f08-de76f028dc09",
+              "name": "topic",
+              "value": "={{ $json.text.split(\"|\")[0].trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "3467e19d-ed36-41a0-bf95-2bcaf9fa869c",
+              "name": "method",
+              "value": "={{ $json.text.split(\"|\")[1].trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        336,
+        -272
+      ],
+      "id": "61c4be83-9ac8-4d3e-923b-eaca1aae8f53",
+      "name": "Validate Input Message"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Validate Input Message').item.json.method }}",
+                    "rightValue": "email",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "69db441f-834b-4af8-b0a2-97e455b2ea3e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Email"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ce69a727-2ecc-4365-91f9-378abfbe3db1",
+                    "leftValue": "={{ $('Validate Input Message').item.json.method }}",
+                    "rightValue": "slack",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Slack"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1072,
+        -400
+      ],
+      "id": "491a3d9f-df4a-4be7-92c8-e04d615d720c",
+      "name": "Email / Slack Router",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Write a professional newsletter on the topic: \"{{$json.topic}}\".\n\nInclude:\n- A compelling title\n- A short engaging introduction\n- 3 to 5 key sections with useful insights\n- Bullet points where helpful\n- A strong conclusion\n\nEnsure the content is practical, informative, and valuable to readers."
+            },
+            {
+              "role": "system",
+              "content": "=You are a professional newsletter writer and content strategist.\n\nYour task is to generate a high-quality, engaging, and well-structured newsletter in clean HTML format.\n\nGuidelines:\n- Write in a professional, clear, and engaging tone\n- The content should be informative and easy to read\n- Avoid fluff and generic statements\n- Use proper structure with:\n  - Title\n  - Introduction\n  - 3 to 5 well-defined sections\n  - Bullet points where appropriate\n  - Conclusion\n\nFormatting Rules:\n- Output must be valid HTML only (no markdown)\n- Use semantic HTML tags:\n  <h1> for title\n  <h2> for sections\n  <p> for paragraphs\n  <ul><li> for lists\n- Keep styling minimal (no CSS unless inline and minimal)\n- Ensure readability for email or Slack display\n\nContent Quality:\n- Provide meaningful insights, trends, or key points\n- Avoid repeating the topic without adding value\n- Make it suitable for a newsletter audience\n\nDo NOT include:\n- Explanations about what you are doing\n- Any text outside HTML"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        -400
+      ],
+      "id": "fe27ab0a-2b54-4272-add3-47613fc04db9",
+      "name": "Open AI to generate NewsLetter",
+      "credentials": {
+        "openAiApi": {
+          "id": "b8g7HNJoNo2rUNan",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Extract Topic": {
+      "main": [
+        [
+          {
+            "node": "Validate Input Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        []
+      ]
+    },
+    "convert html to normal text": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "valid/invalid request": {
+      "main": [
+        [
+          {
+            "node": "Open AI to generate NewsLetter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input Message": {
+      "main": [
+        [
+          {
+            "node": "valid/invalid request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email / Slack Router": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "convert html to normal text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open AI to generate NewsLetter": {
+      "main": [
+        [
+          {
+            "node": "Email / Slack Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "66a55b7b-2249-4e84-be6a-f1163e7a6def",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "04e96627bb756684b55c0bae404e72f75490c3b7016d8b1689c3e34644a486f2"
+  },
+  "id": "6BGGYQXI9Q6JXH73",
+  "tags": []
+}

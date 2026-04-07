@@ -1,0 +1,228 @@
+{
+  "name": "workflow_my_first_agent_trial",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -480,
+        -48
+      ],
+      "id": "27e9bfb3-d2b6-47a8-801a-52a1d79e7470",
+      "name": "When chat message received",
+      "webhookId": "ece95cf2-ed74-4f6d-b7b2-aaa76b79d54a"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are an AI assistant with access to tools:\n\n- gmail_tool → email tasks\n- slack_tool → team communication\n- web_search → search the web using SerpAPI\n\nRules:\n- Use gmail_tool for emails\n- Use slack_tool for Slack messages\n- Use web_search when:\n  - information is recent\n  - facts are unknown\n  - user asks about news, updates, or external data\n\n- Always prefer web_search over guessing\n- Extract only relevant facts from results\n- Summarize clearly and accurately\n\n- If needed, refine the search query"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -272,
+        -48
+      ],
+      "id": "545f3093-bb5f-4b5c-8399-86d64fbb78aa",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -416,
+        160
+      ],
+      "id": "c28d1144-22eb-4125-ae73-fe86cac7e346",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "b8g7HNJoNo2rUNan",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -272,
+        160
+      ],
+      "id": "57ac666f-6e91-48d4-a48c-c04ed61a6a4a",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Send an email when the user asks to email someone",
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        -128,
+        160
+      ],
+      "id": "b405b7d5-f38c-4b99-9bfa-7376b8403a3f",
+      "name": "Send a message in Gmail",
+      "webhookId": "767a6d93-0129-453a-970d-29afc219ee23",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "w63Xu7fn9rXZXnUi",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Send a message to Slack",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AQCJKCC1Y",
+          "mode": "list",
+          "cachedResultName": "all-slackaisri"
+        },
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_Text', ``, 'string') }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slackTool",
+      "typeVersion": 2.4,
+      "position": [
+        112,
+        96
+      ],
+      "id": "69123b01-67e7-4d58-9117-708aded4c8ba",
+      "name": "Send a message in Slack",
+      "webhookId": "2cc1067c-a90f-4b52-8963-a0f8f5055c02",
+      "credentials": {
+        "slackApi": {
+          "id": "uey5Ur6VajUyUQ7N",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={\n  \"engine\": \"google\",\n  \"q\": \"={{ $json.chatInput }}\",\n  \"api_key\": \"162ef0ca322c3a3b68cd11b80362f0f290e620a5b5bbc41dac25720dc4258079\",\n  \"gl\": \"in\",\n  \"hl\": \"en\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        112,
+        -64
+      ],
+      "id": "2b3c55c9-c2f2-455d-a672-36fea9aa6250",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Slack": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "757ff162-f1ae-4b98-9ce7-d442e1aa96f1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "04e96627bb756684b55c0bae404e72f75490c3b7016d8b1689c3e34644a486f2"
+  },
+  "id": "Ec0b7cPXTtB10hpk",
+  "tags": []
+}

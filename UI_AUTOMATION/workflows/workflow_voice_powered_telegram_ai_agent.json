@@ -1,0 +1,750 @@
+{
+  "name": "workflow_voice_powered_telegram_ai_agent",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -960,
+        -192
+      ],
+      "id": "1435ec51-3d43-4b3d-bd6e-fd58d731e7b5",
+      "name": "Telegram Trigger",
+      "webhookId": "fb801927-cab8-476c-b6f5-1e96ae8a5d5e",
+      "credentials": {
+        "telegramApi": {
+          "id": "mDrTMaOh58svFFGd",
+          "name": "socialeagle_sri_ai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Reply to the user with your intelligence \n\nVoice input : \n{{ $json.voice_text }}\n\nText input : \n{{ $json.text }}\n\nName : {{ $('Telegram Trigger').item.json.message.from.first_name }}",
+        "options": {
+          "systemMessage": "You are an AI assistant inside a Telegram automation system with access to tools.\n\n=========================\nTOOLS AVAILABLE\n=========================\nweb_search → real-time information retrieval\ngmail → send emails (STRICT JSON OUTPUT REQUIRED)\nslack → send messages to Slack\n=========================\nCRITICAL EXECUTION RULES\n=========================\n1. TOOL USE RULE (VERY IMPORTANT)\nUse tools ONLY when the user explicitly requests an action.\nNEVER trigger Gmail or Slack based on assumptions or inferred intent.\nIf the request is unclear → ask a clarification question before using any tool.\n2. FINAL RESPONSE RULE (MOST IMPORTANT)\nYour Telegram response MUST always be human-readable text.\nNEVER return raw tool output to Telegram.\nNEVER display JSON in Telegram responses (except when calling Gmail tool).\nNEVER include internal execution phrases such as:\n“Email sent”\n“Message delivered”\n“Processed successfully”\n“I’ve sent…”\n\nInstead:\n\nAlways rewrite tool results into natural, user-friendly language.\n3. TOOL OUTPUT HANDLING (CRITICAL)\nTool outputs are INTERNAL SYSTEM DATA ONLY.\nNEVER forward tool responses directly to Telegram.\nALWAYS generate a fresh final response after tool execution.\nNEVER reuse tool response text as final output.\n=========================\nWEB SEARCH RULES\n=========================\nUse web_search ONLY for real-time, unknown, or factual queries.\nSummarize results in 2–4 short lines for Telegram.\nKeep responses simple and conversational.\n=========================\nGMAIL TOOL RULES (STRICT)\n=========================\n\nUse Gmail ONLY when the user explicitly says:\n\n“send email”\n“email this”\n“mail to”\n\nWhen triggered, output ONLY valid JSON and NOTHING ELSE:\n\n{\n\"to\": \"<email>\",\n\"subject\": \"<subject>\",\n\"message\": \"<HTML body>\"\n}\n\nEMAIL FORMAT RULES\nmessage must be HTML only\nuse <br> for line breaks\nuse <br><br> for paragraphs\nalways start with:\nHi <Name>,<br><br>\nalways end with:\nRegards,<br><Sender>\nNO markdown, NO explanation, NO extra text\n=========================\nSLACK RULES\n=========================\n\nUse Slack ONLY when:\n\nuser provides a message AND does NOT request email\n\nIf used:\n\nSend message to Slack tool\nThen respond in Telegram with:\n\n“Sent to Slack successfully.”\n\n=========================\nDEFAULT BEHAVIOR\n=========================\nIf user says “test” or sends casual text → respond normally in Telegram\nKeep responses short, clear, and conversational\nNEVER trigger any tool unless explicitly required\nIf uncertain → ask a question instead of using a tool\n🚨 KEY SAFETY GUARANTEE (IMPORTANT)\nGmail and Slack tools MUST NEVER auto-trigger\nTool outputs MUST NEVER appear in Telegram messages\nTelegram response is ALWAYS newly generated text, never tool text"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -112,
+        16
+      ],
+      "id": "8fca386b-5e9d-424e-9e56-45e9501e4872",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "temperature": 0.8
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -704,
+        400
+      ],
+      "id": "50acd971-9db2-4944-910f-1b7fff4a02d2",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "b8g7HNJoNo2rUNan",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=Telegram_{{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -432,
+        448
+      ],
+      "id": "0019bded-db7e-406d-a79c-c0e42bf8c993",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        112,
+        496
+      ],
+      "id": "296c6767-28e4-4861-bf7e-2e015ba3b77e",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "WaCcURep4pzrYo0b",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        -160,
+        464
+      ],
+      "id": "0085f219-0927-410a-b371-834ed5cf6a69",
+      "name": "Send a message in Gmail",
+      "webhookId": "c568a455-7b2d-4cee-b2b4-c2b71422cd16",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "w63Xu7fn9rXZXnUi",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "24dcf70b-86cb-429f-b0b0-3db1d4e3828e",
+              "name": "voice",
+              "value": "={{ $('Telegram Trigger').item.json.message.voice.file_id }}",
+              "type": "string"
+            },
+            {
+              "id": "78a8af2f-f20b-406d-9a99-ea085b2a742b",
+              "name": "input_type",
+              "value": "voice",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        -304
+      ],
+      "id": "c01469c5-f231-4eb5-b0bd-8570d4885f4d",
+      "name": "Voice Input",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6d8682bf-d9d1-403a-80f3-7c7d66fa17d7",
+              "name": "text",
+              "value": "={{ $('Telegram Trigger').item.json.message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "19d1e85c-5a73-4f34-8900-968518d883cf",
+              "name": "input_type",
+              "value": "text",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -384,
+        16
+      ],
+      "id": "1befdd25-d95d-4a65-adff-d4e313f6e233",
+      "name": "Text Input",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.voice }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        -288
+      ],
+      "id": "58e3debd-ccb7-4cb4-94d2-97e7a9c93bba",
+      "name": "Get a file",
+      "webhookId": "4b44f01d-828f-4c5e-a8ae-c55d4ecc7dcc",
+      "credentials": {
+        "telegramApi": {
+          "id": "mDrTMaOh58svFFGd",
+          "name": "socialeagle_sri_ai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        80,
+        -272
+      ],
+      "id": "0ee9059c-689b-4154-bdbc-7043efe647cf",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "openAiApi": {
+          "id": "b8g7HNJoNo2rUNan",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "43e24a49-726d-4758-be86-709a025b27f8",
+              "name": "voice_text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        304,
+        -256
+      ],
+      "id": "7cd66d40-922c-4d2b-8930-7396ed6b279e",
+      "name": "Voice Text"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Summarize the input with the high accuracy ensuring clarity and conciseness. Focus on delivering contextually rich summary that is optimized for speech synthesis.\n\nRemove redundant phrases, introductory statements, or closing remarks\n\nThe output should be natural and engaging for an audio format"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        224,
+        32
+      ],
+      "id": "afbd3c73-c128-45cf-b7f2-7d025bbc8d36",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        304,
+        448
+      ],
+      "id": "865832ac-1635-4276-9f35-d45b21953893",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "b8g7HNJoNo2rUNan",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $('AI Agent').item.json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        -224
+      ],
+      "id": "506fa6c8-b478-4f86-9a6f-4e1ffcfac96c",
+      "name": "Send a text message",
+      "webhookId": "88ab1839-6221-4ea4-b071-7c6ca52dace2",
+      "alwaysOutputData": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "mDrTMaOh58svFFGd",
+          "name": "socialeagle_sri_ai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAudio",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1104,
+        336
+      ],
+      "id": "b7353cba-740d-4bfd-a835-957d06ba5d6c",
+      "name": "Send an audio file",
+      "webhookId": "646b2b67-6ec4-44e4-a26b-58a79f6d6511",
+      "credentials": {
+        "telegramApi": {
+          "id": "mDrTMaOh58svFFGd",
+          "name": "socialeagle_sri_ai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "input": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        928,
+        368
+      ],
+      "id": "73e90ce7-352a-4252-b87d-8c52692a4ac7",
+      "name": "Generate audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "b8g7HNJoNo2rUNan",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Input Method').item.json.input_type }}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ef3a1336-e7eb-41a7-be33-37fc608ec622"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text reply"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "184f31b4-37e4-4ec5-9a3d-e133557e502d",
+                    "leftValue": "={{ $('Input Method').item.json.input_type }}",
+                    "rightValue": "voice",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice reply"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        672,
+        32
+      ],
+      "id": "b505b6aa-ddbc-4c62-bc16-12cc4d863e9b",
+      "name": "Text/Voice Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "69d11507-9974-4eb1-a561-c4597919adb1",
+              "name": "input_type",
+              "value": "={{    $json.message.voice ? 'voice' :   $json.message.text ? 'text' :   'unknown' }}",
+              "type": "string"
+            },
+            {
+              "id": "5e13566d-1891-4272-8dc2-6b860fb86284",
+              "name": "Query",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -608,
+        -464
+      ],
+      "id": "b99dbdba-f0d4-44f4-9266-a767830a91f8",
+      "name": "Input Method"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.input_type }}",
+                    "rightValue": "voice",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "52654d5f-ba5e-4fa0-a6b7-eaac661d0bb5"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "36ef1e6b-261d-4b04-9202-edeb720e1be4",
+                    "leftValue": "={{ $json.input_type }}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -688,
+        -176
+      ],
+      "id": "a65e86f6-572b-418b-bcb5-804f09334284",
+      "name": "Input - Voice / Text?"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Input Method",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Voice Input": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Input": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Voice Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Voice Text": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Text/Voice Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an audio file": {
+      "main": [
+        []
+      ]
+    },
+    "Generate audio": {
+      "main": [
+        [
+          {
+            "node": "Send an audio file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text/Voice Response": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Method": {
+      "main": [
+        [
+          {
+            "node": "Input - Voice / Text?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input - Voice / Text?": {
+      "main": [
+        [
+          {
+            "node": "Voice Input",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c8056b94-21b6-4380-a1df-55e8ec0126ff",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "04e96627bb756684b55c0bae404e72f75490c3b7016d8b1689c3e34644a486f2"
+  },
+  "id": "S9ow268vwzDP4vE4",
+  "tags": []
+}

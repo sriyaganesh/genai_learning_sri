@@ -1,0 +1,212 @@
+{
+  "name": "workflow_google_sheet_automation",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        -32
+      ],
+      "id": "a4113186-0d34-4d5b-b237-0f336cb60cb5",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1_TQ2j9xqosRXipdH2aADr1a5C4JZYatj6Q39PK-abrs",
+          "mode": "list",
+          "cachedResultName": "review_sample",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_TQ2j9xqosRXipdH2aADr1a5C4JZYatj6Q39PK-abrs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "01-04-2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_TQ2j9xqosRXipdH2aADr1a5C4JZYatj6Q39PK-abrs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $('Get Rows from google sheet').item.json.Name }}",
+            "Review": "={{ $('Get Rows from google sheet').item.json.Review }}",
+            "Sentiment Analysis": "={{ $json.output[0].content[0].text }}"
+          },
+          "matchingColumns": [
+            "Name"
+          ],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Review",
+              "displayName": "Review",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sentiment Analysis",
+              "displayName": "Sentiment Analysis",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        320,
+        -32
+      ],
+      "id": "7af08ee9-239a-4020-9b88-58e68c57e810",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8AZZgaLWYzSZl2Oi",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1_TQ2j9xqosRXipdH2aADr1a5C4JZYatj6Q39PK-abrs",
+          "mode": "list",
+          "cachedResultName": "review_sample",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_TQ2j9xqosRXipdH2aADr1a5C4JZYatj6Q39PK-abrs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "01-04-2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_TQ2j9xqosRXipdH2aADr1a5C4JZYatj6Q39PK-abrs/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -240,
+        -32
+      ],
+      "id": "5a1fe84e-e018-4480-b1f6-41a87f0a5f25",
+      "name": "Get Rows from google sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8AZZgaLWYzSZl2Oi",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an expert in analyzing the feedback given by users and identify the sentiment for Anakysis\nYou should give output only either of the below\nPositive\nNegative\n\n# Only one word should be given as output\nExample:\nPositive"
+            },
+            {
+              "content": "=Identify the Sentiment for the feedback {{ $json.Review }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        -32
+      ],
+      "id": "a43b29ed-b1b8-4b23-84fb-80474e9f23e0",
+      "name": "Open AI Message a Model to identify the sentiment",
+      "credentials": {
+        "openAiApi": {
+          "id": "b8g7HNJoNo2rUNan",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Rows from google sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Rows from google sheet": {
+      "main": [
+        [
+          {
+            "node": "Open AI Message a Model to identify the sentiment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open AI Message a Model to identify the sentiment": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "56dce6ed-bfab-47b9-bf26-9323659faeb4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "04e96627bb756684b55c0bae404e72f75490c3b7016d8b1689c3e34644a486f2"
+  },
+  "id": "kX0ggaPka0G33NNg",
+  "tags": []
+}

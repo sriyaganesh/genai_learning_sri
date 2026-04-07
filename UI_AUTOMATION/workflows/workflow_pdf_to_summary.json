@@ -1,0 +1,153 @@
+{
+  "name": "workflow_pdf_to_summary",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "accfc6c7-0498-4a31-afc5-204a2ace20ab",
+      "name": "Telegram Trigger",
+      "webhookId": "50778609-60d7-47af-8e6a-8d1aa08992cc",
+      "credentials": {
+        "telegramApi": {
+          "id": "mDrTMaOh58svFFGd",
+          "name": "socialeagle_sri_ai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "8c9be9ed-e9cc-4e70-b9fc-49b9e368d34d",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an expert in summarizing the content in PDF. Give the summary as below\nProvide highlighted and important topics in single page\nFormat should be in a readable form and the summary should be able to cover over all concepts  and explain in a very simple manner\nProvide "
+            },
+            {
+              "content": "=Provide summary for the below PDF\n {{ $json.text }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "b3cdf0b5-5e1d-484f-b594-f80c9f7f57cb",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "b8g7HNJoNo2rUNan",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output[0].content[0].text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "d4c74dd9-55e4-4389-974a-51f207825faa",
+      "name": "Send a text message",
+      "webhookId": "0bf0f8ac-932b-45ba-8fb0-149b2523ad6a",
+      "credentials": {
+        "telegramApi": {
+          "id": "mDrTMaOh58svFFGd",
+          "name": "socialeagle_sri_ai"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "4e650e71-330a-4479-ab82-dfe889f4b7b0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "04e96627bb756684b55c0bae404e72f75490c3b7016d8b1689c3e34644a486f2"
+  },
+  "id": "pFEHulIUK8uaJmld",
+  "tags": []
+}
