@@ -1,0 +1,483 @@
+{
+  "name": "MCP Server Client Demo",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        64,
+        0
+      ],
+      "id": "d8bd81f2-4a08-4faa-900a-334525dafdfb",
+      "name": "When chat message received",
+      "webhookId": "d9b8f5b1-fe48-4c4f-8bf6-76426b495f13"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a helpful assistant. Use srividhyaganesan1988@gmail.com for the gmail\n\nTools:\n- \"create mail\" -> for creating new emails\n- \"send mail\" -> for sending new emails\n- \"draft mail\" → for drafting emails\n- \"reply mail\" → for replying to emails\n- create event → for calendar events\n- Get Latest mails → For getting Latest mails \n\nRULES:\n\nRULES:\n\n1. If user want to create draft email, ALWAYS call \"draft mail\"\n   Examples:\n   - \"draft email\"\n\n2. DO NOT respond in text if a tool can be used\n\n3. ALWAYS call EXACTLY ONE tool\n\n4. Output MUST be JSON only\n\n6. If user gives incomplete info:\n   - Fill reasonable defaults\n   - DO NOT skip tool call\n\n\nAlways call the tool first. If tool not available, then use your knowledge\n\nWhen calling the Create Event tool:\n- ALWAYS use \"summary\" for title\n- ALWAYS provide \"start\" and \"end\" in ISO 8601 format\n- ALWAYS include timezone offset (+05:30 for IST)\n- ALWAYS include \"timezone\": \"Asia/Kolkata\"\n\nDO NOT use:\n- title\n- date only\n- natural language time\n\nCorrect format example:\n{\n  \"summary\": \"Team Meeting\",\n  \"start\": \"2026-04-08T10:00:00+05:30\",\n  \"end\": \"2026-04-08T11:00:00+05:30\",\n  \"timezone\": \"Asia/Kolkata\"\n}\n\n\n# DO  NOT repeatedly call the tools or RETRY\n\n\n If user asks to send email  then call \"send mail\"\n\n If user asks to reply or respond to email  then call \"reply mail\"\n\n If user asks to rdraft email  then call \"draft mail\"\n\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        16
+      ],
+      "id": "1ef91fd0-12dd-420c-8ecc-4e0b35579108",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        656,
+        304
+      ],
+      "id": "c2a4b389-c097-4b3b-8f73-25eb9983c094",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "b8g7HNJoNo2rUNan",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        784,
+        320
+      ],
+      "id": "956c6475-0f47-4022-af03-c9410b5f9982",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "path": "MCP Demo"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        -240
+      ],
+      "id": "d3ec9bce-adc6-4508-951e-6491d3171e6e",
+      "name": "MCP Server Trigger",
+      "webhookId": "f83d7bb6-0194-45d8-b038-cf786c1395ab"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "T6IqVqvbm7TbFFj9",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/T6IqVqvbm7TbFFj9",
+          "cachedResultName": "wf_sub_get_latest_file"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        2304,
+        128
+      ],
+      "id": "f9149f9b-3481-47af-8724-5e95764172e4",
+      "name": "Call 'wf_sub_get_latest_file'"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://n8n.srv1538239.hstgr.cloud/mcp/MCP Demo",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        1152,
+        224
+      ],
+      "id": "c039a7d6-558b-4756-8bb2-557756917bd7",
+      "name": "MCP Client"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 5,
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        2512,
+        208
+      ],
+      "id": "abb8fa03-2a1c-453b-807f-cc75b3e0652e",
+      "name": "Get Latest Emails",
+      "webhookId": "d7dcbe53-541a-4ff9-84c5-0fa02618701e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "w63Xu7fn9rXZXnUi",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Chat_ID', ``, 'string') }}",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Text', ``, 'string') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTool",
+      "typeVersion": 1.2,
+      "position": [
+        1936,
+        368
+      ],
+      "id": "28edb1dd-0d86-415b-a47b-02b105602f01",
+      "name": "Send Message - Telegram",
+      "webhookId": "88129807-82b6-4486-82a7-2df249d7bb17",
+      "credentials": {
+        "telegramApi": {
+          "id": "mDrTMaOh58svFFGd",
+          "name": "socialeagle_sri_ai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Title', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        2048,
+        144
+      ],
+      "id": "c0eca770-2570-497d-8929-1c9abb97b007",
+      "name": "Create Spreadsheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8AZZgaLWYzSZl2Oi",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "srividhyaganesan1988@gmail.com",
+          "mode": "list",
+          "cachedResultName": "srividhyaganesan1988@gmail.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "updateFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        2400,
+        -96
+      ],
+      "id": "a5b45ddb-8456-4278-855f-52b12a4fa077",
+      "name": "Update Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "8JCe59KxC4MWEC6L",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "srividhyaganesan1988@gmail.com",
+          "mode": "list",
+          "cachedResultName": "srividhyaganesan1988@gmail.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "summary": "={{$json[\"title\"]}}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        2176,
+        -272
+      ],
+      "id": "cb2fe76b-0f76-4868-b141-7e38bb9b5aa3",
+      "name": "Create Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "8JCe59KxC4MWEC6L",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        1456,
+        16
+      ],
+      "id": "18c6dbdd-1833-49ab-9934-0951c485c591",
+      "name": "send mail",
+      "webhookId": "81706f87-009f-49f0-b9cd-7ae003b00f9a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "w63Xu7fn9rXZXnUi",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message_ID', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        1616,
+        112
+      ],
+      "id": "9b605220-0448-47d6-88f9-f7b3ddb9aa70",
+      "name": "reply mail",
+      "webhookId": "51a57839-0250-494b-bba0-ab2fd789feb8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "w63Xu7fn9rXZXnUi",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to draft an email when the user wants to:\n- send email\n- write email\n- draft email\n- compose email\n- reply to email\n\nEven if the user has spelling mistakes (like \"dreaft email\"), interpret intent and call this tool.",
+        "resource": "draft",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        1760,
+        256
+      ],
+      "id": "8ec84ad1-835c-438f-9779-efef75bb6980",
+      "name": "draft mail",
+      "webhookId": "7d2fcd40-a679-43e9-a026-c543a981bca0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "w63Xu7fn9rXZXnUi",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'wf_sub_get_latest_file'": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Latest Emails": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Message - Telegram": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Spreadsheet": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "send mail": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "reply mail": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "draft mail": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "4146b4fc-209b-4522-b3d8-e540adbf6c68",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "04e96627bb756684b55c0bae404e72f75490c3b7016d8b1689c3e34644a486f2"
+  },
+  "id": "5ZPtSB5JKQrzrff7",
+  "tags": []
+}
